@@ -73,3 +73,12 @@ export async function openLocalDb(): Promise<SQLiteDBConnection> {
 export function getDatasetUrl(): string {
   return DATASET_URL;
 }
+
+// Small companion file (see data-pipeline/scripts/04-build-dataset.mjs) the app polls
+// cheaply to check for a newer dataset without re-downloading the whole ~20MB dataset.db.
+const META_URL =
+  'https://github.com/kenji12190805-afk/ocg-inventory-app/releases/download/dataset-latest/meta.json';
+
+export function getMetaUrl(): string {
+  return META_URL;
+}

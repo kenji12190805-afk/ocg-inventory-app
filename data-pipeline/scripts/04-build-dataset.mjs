@@ -181,4 +181,20 @@ insertMeta.finalize();
 
 out.close();
 
+// Small companion file the app can poll cheaply (instead of re-downloading the whole
+// dataset.db) to decide whether a newer dataset is worth fetching -- see the "新弾同期の
+// 通知" feature in app/src/db/sqlite.ts / SettingsScreen.tsx.
+const metaPath = path.join(DIST_DIR, "meta.json");
+writeFileSync(
+  metaPath,
+  JSON.stringify({
+    dataset_version: builtAt,
+    built_at: builtAt,
+    babelcdb_commit: babelCommit,
+    ja_source_commit: jaCommit,
+    yugipedia_fetched_at: builtAt,
+  }),
+);
+
 console.log(`Dataset built: ${cardCount} cards, ${resolvedPrints.length} prints -> ${OUT_PATH}`);
+console.log(`Meta written -> ${metaPath}`);

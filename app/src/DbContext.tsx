@@ -36,7 +36,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
 
   if (error) {
     return (
-      <div className="empty-state">
+      <div className="app-main empty-state">
         カードデータの読み込みに失敗しました。
         <br />
         {error}
@@ -44,7 +44,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
     );
   }
   if (!value) {
-    return <div className="empty-state">カードデータを読み込み中...</div>;
+    return <div className="app-main empty-state">カードデータを読み込み中...</div>;
   }
   return <DbContext.Provider value={value}>{children}</DbContext.Provider>;
 }

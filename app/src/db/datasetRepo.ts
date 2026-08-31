@@ -158,6 +158,33 @@ export async function matchCardsByOcrText(
   return top.map((t) => ({ card: full.get(t.card.id) ?? t.card, score: t.score }));
 }
 
+export async function getPrintsByIds(conn: SQLiteDBConnection, ids: number[]): Promise<Map<number, CardPrint>> {
+  const map = new Map<number, CardPrint>();
+  if (ids.length === 0) return map;
+  const placeholders = ids.map(() => '?').join(',');
+  const result = await conn.query(`SELECT * FROM card_prints WHERE id IN (${placeholders})`, ids);
+  for (const row of (result.values ?? []) as CardPrint[]) map.set(row.id, row);
+  return map;
+}
+
+/** Total number of known prints for each of the given set names (for collection-%
+ *  completion in the stats screen). Only queried for sets the user actually owns
+ *  something in, not every set in history. */
+export async function getPrintCountsBySetNames(
+  conn: SQLiteDBConnection,
+  setNames: string[],
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (setNames.length === 0) return counts;
+  const placeholders = setNames.map(() => '?').join(',');
+  const result = await conn.query(
+    `SELECT set_name, COUNT(*) AS n FROM card_prints WHERE set_name IN (${placeholders}) GROUP BY set_name`,
+    setNames,
+  );
+  for (const row of result.values ?? []) counts.set(row.set_name, row.n);
+  return counts;
+}
+
 export async function getSyncMeta(conn: SQLiteDBConnection): Promise<SyncMeta> {
   const result = await conn.query('SELECT key, value FROM sync_meta');
   const meta: SyncMeta = {};
