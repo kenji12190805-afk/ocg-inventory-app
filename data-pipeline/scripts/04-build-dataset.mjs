@@ -4,7 +4,7 @@
 // Decode logic (setcode -> archetype tags, type/level bit-packing) mirrors
 // yugioh-duel-engine/play.mjs's loadCards() and yuugiou's CardDatabase.kt.loadCards() --
 // see data-pipeline/SCHEMA.md.
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import pkg from "node-sqlite3-wasm";
 import { normalizeForSearch } from "./lib/normalize.mjs";
