@@ -1,0 +1,17 @@
+{
+  "name": "ocg-inventory-data-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Weekly job: pull BabelCDB + yukisaba/EDOPro_japanese + Yugipedia set/rarity data and build the merged read-only dataset the app syncs.",
+  "type": "module",
+  "scripts": {
+    "fetch:babelcdb": "node scripts/01-fetch-babelcdb.mjs",
+    "fetch:ja-texts": "node scripts/02-fetch-ja-texts.mjs",
+    "fetch:yugipedia": "node scripts/03-fetch-yugipedia-prints.mjs",
+    "build": "node scripts/04-build-dataset.mjs",
+    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run build"
+  },
+  "dependencies": {
+    "node-sqlite3-wasm": "^0.8.60"
+  }
+}

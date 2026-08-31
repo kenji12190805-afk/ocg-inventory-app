@@ -1,0 +1,45 @@
+name: Build card dataset
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # every Sunday 18:00 UTC (~Monday 03:00 JST)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: data-pipeline
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch BabelCDB
+        run: npm run fetch:babelcdb
+
+      - name: Fetch & merge JA texts
+        run: npm run fetch:ja-texts
+
+      - name: Fetch Yugipedia set/rarity data
+        run: npm run fetch:yugipedia
+
+      - name: Build dataset
+        run: npm run build
+
+      - name: Publish dataset as a release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dataset-latest
+          name: "Card dataset (latest)"
+          body: "Auto-built by build-dataset.yml on ${{ github.event.repository.updated_at }}. Superseded on every run -- the app should always pull the `dataset-latest` release."
+          files: data-pipeline/dist/dataset.sqlite
