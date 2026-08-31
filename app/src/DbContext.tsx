@@ -1,10 +1,16 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { openDataset, openLocalDb } from './db/sqlite';
 
 interface DbContextValue {
   dataset: SQLiteDBConnection;
   local: SQLiteDBConnection;
+  /** Re-downloads the dataset and swaps the connection in context. Does NOT touch the
+   *  local (user data) connection or reload the page -- a page reload would try to
+   *  recreate the "ocg_local" native connection while the old one is still registered
+   *  (the plugin's native connections outlive a WebView/JS reload), which fails with
+   *  "Connection ocg_local already exists". */
+  refreshDataset: () => Promise<void>;
 }
 
 const DbContext = createContext<DbContextValue | null>(null);
@@ -16,7 +22,7 @@ export function useDb(): DbContextValue {
 }
 
 export function DbProvider({ children }: { children: ReactNode }) {
-  const [value, setValue] = useState<DbContextValue | null>(null);
+  const [value, setValue] = useState<Omit<DbContextValue, 'refreshDataset'> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,6 +40,11 @@ export function DbProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const refreshDataset = useCallback(async () => {
+    const dataset = await openDataset(true);
+    setValue((prev) => (prev ? { ...prev, dataset } : prev));
+  }, []);
+
   if (error) {
     return (
       <div className="app-main empty-state">
@@ -46,5 +57,5 @@ export function DbProvider({ children }: { children: ReactNode }) {
   if (!value) {
     return <div className="app-main empty-state">カードデータを読み込み中...</div>;
   }
-  return <DbContext.Provider value={value}>{children}</DbContext.Provider>;
+  return <DbContext.Provider value={{ ...value, refreshDataset }}>{children}</DbContext.Provider>;
 }

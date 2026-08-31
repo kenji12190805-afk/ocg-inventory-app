@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDb } from '../DbContext';
 import { getSyncMeta } from '../db/datasetRepo';
-import { openDataset, getDatasetUrl } from '../db/sqlite';
+import { getDatasetUrl } from '../db/sqlite';
 import { exportInventoryCsv, exportFullBackupJson, importBackupJson } from '../backup';
 import type { SyncMeta } from '../db/types';
 
 export default function SettingsScreen() {
-  const { dataset, local } = useDb();
+  const { dataset, local, refreshDataset } = useDb();
   const [meta, setMeta] = useState<SyncMeta>({});
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +27,7 @@ export default function SettingsScreen() {
     setSyncing(true);
     setError(null);
     try {
-      await openDataset(true);
-      await reload();
+      await refreshDataset();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
