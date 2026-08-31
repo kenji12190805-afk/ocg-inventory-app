@@ -5,6 +5,9 @@ import CardDetailScreen from './screens/CardDetailScreen';
 import InventoryListScreen from './screens/InventoryListScreen';
 import StorageLocationsScreen from './screens/StorageLocationsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import DeckListScreen from './screens/DeckListScreen';
+import DeckDetailScreen from './screens/DeckDetailScreen';
+import CameraRegisterScreen from './screens/CameraRegisterScreen';
 
 export default function App() {
   return (
@@ -16,7 +19,10 @@ export default function App() {
             <Routes>
               <Route path="/" element={<SearchScreen />} />
               <Route path="/card/:cardId" element={<CardDetailScreen />} />
+              <Route path="/camera" element={<CameraRegisterScreen />} />
               <Route path="/inventory" element={<InventoryListScreen />} />
+              <Route path="/deck" element={<DeckListScreen />} />
+              <Route path="/deck/:deckId" element={<DeckDetailScreen />} />
               <Route path="/storage" element={<StorageLocationsScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Routes>
@@ -28,6 +34,9 @@ export default function App() {
           </NavLink>
           <NavLink to="/inventory" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span className="icon">📦</span>在庫一覧
+          </NavLink>
+          <NavLink to="/deck" className={({ isActive }) => (isActive ? 'active' : '')}>
+            <span className="icon">🃏</span>デッキ
           </NavLink>
           <NavLink to="/storage" className={({ isActive }) => (isActive ? 'active' : '')}>
             <span className="icon">🗂️</span>保管場所

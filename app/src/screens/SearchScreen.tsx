@@ -41,12 +41,17 @@ export default function SearchScreen() {
 
   return (
     <div>
-      <input
-        type="search"
-        placeholder="カード名・効果で検索"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="search"
+          placeholder="カード名・効果で検索"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Link to="/camera" className="plain" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          📷
+        </Link>
+      </div>
 
       <div className="section-title">種類</div>
       <div className="chip-row">

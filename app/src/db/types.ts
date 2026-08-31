@@ -41,6 +41,18 @@ export interface InventoryRow {
   updated_at: string;
 }
 
+export interface Deck {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+export interface DeckCard {
+  deck_id: number;
+  card_id: number;
+  quantity: number;
+}
+
 export interface SyncMeta {
   dataset_version?: string;
   built_at?: string;

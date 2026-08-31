@@ -84,6 +84,80 @@ export async function getPrint(conn: SQLiteDBConnection, printId: number): Promi
   return (result.values?.[0] as CardPrint) ?? null;
 }
 
+/** Exact (post-normalization) name match -- used by deck-list text import. Multiple cards
+ *  can share a name (alt art / errata reprints under a different BabelCDB id); the caller
+ *  picks one (lowest id) as canonical. */
+export async function findCardByExactName(conn: SQLiteDBConnection, name: string): Promise<Card | null> {
+  const key = normalizeForSearch(name.trim());
+  if (!key) return null;
+  const result = await conn.query(
+    'SELECT * FROM cards WHERE name_ja_normalized = ? ORDER BY id LIMIT 1',
+    [key],
+  );
+  const row = result.values?.[0];
+  return row ? rowToCard(row) : null;
+}
+
+export async function getCardsByIds(conn: SQLiteDBConnection, ids: number[]): Promise<Map<number, Card>> {
+  const map = new Map<number, Card>();
+  if (ids.length === 0) return map;
+  const placeholders = ids.map(() => '?').join(',');
+  const result = await conn.query(`SELECT * FROM cards WHERE id IN (${placeholders})`, ids);
+  for (const row of result.values ?? []) map.set(row.id, rowToCard(row));
+  return map;
+}
+
+// Longest common contiguous substring, used by camera OCR matching (score = LCS length /
+// candidate name length). Single-row DP to keep memory flat over ~15k comparisons.
+export function longestCommonSubstringLength(a: string, b: string): number {
+  if (!a || !b) return 0;
+  let prevRow = new Array(b.length + 1).fill(0);
+  let best = 0;
+  for (let i = 1; i <= a.length; i++) {
+    const currRow = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        currRow[j] = prevRow[j - 1] + 1;
+        if (currRow[j] > best) best = currRow[j];
+      }
+    }
+    prevRow = currRow;
+  }
+  return best;
+}
+
+export interface OcrCandidate {
+  card: Card;
+  score: number; // 0..1
+}
+
+/** Scores every card's name against OCR'd text via longest-common-substring overlap and
+ *  returns the top N. Best-effort only -- OCR text from a card photo is noisy, this just
+ *  narrows down candidates for the user to pick from, not an exact identification. */
+export async function matchCardsByOcrText(
+  conn: SQLiteDBConnection,
+  ocrText: string,
+  topN = 5,
+): Promise<OcrCandidate[]> {
+  const haystack = normalizeForSearch(ocrText).slice(0, 500);
+  if (!haystack) return [];
+  const result = await conn.query('SELECT id, name_ja, name_ja_normalized FROM cards');
+  const scored: OcrCandidate[] = [];
+  for (const row of result.values ?? []) {
+    const needle: string = row.name_ja_normalized;
+    if (!needle || needle.length < 2) continue;
+    const lcs = longestCommonSubstringLength(needle, haystack);
+    const score = lcs / needle.length;
+    if (score >= 0.5) {
+      scored.push({ card: { id: row.id, name_ja: row.name_ja } as Card, score });
+    }
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.slice(0, topN);
+  const full = await getCardsByIds(conn, top.map((t) => t.card.id));
+  return top.map((t) => ({ card: full.get(t.card.id) ?? t.card, score: t.score }));
+}
+
 export async function getSyncMeta(conn: SQLiteDBConnection): Promise<SyncMeta> {
   const result = await conn.query('SELECT key, value FROM sync_meta');
   const meta: SyncMeta = {};
