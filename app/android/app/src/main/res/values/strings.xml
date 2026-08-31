@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OCG在庫</string>
+    <string name="title_activity_main">OCG在庫</string>
+    <string name="package_name">com.kenji.ocginventory</string>
+    <string name="custom_url_scheme">com.kenji.ocginventory</string>
+</resources>

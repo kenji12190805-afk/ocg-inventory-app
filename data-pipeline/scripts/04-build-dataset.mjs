@@ -14,7 +14,9 @@ const { Database } = pkg;
 const WORK_DIR = path.join(process.cwd(), "work");
 const DIST_DIR = path.join(process.cwd(), "dist");
 const SCHEMA_PATH = path.join(process.cwd(), "schema.sql");
-const OUT_PATH = path.join(DIST_DIR, "dataset.sqlite");
+// Named dataset.db (not .sqlite) so @capacitor-community/sqlite's getFromHTTPRequest
+// derives a clean db name ("dataset") from the URL -- see app/src/db/sqlite.ts.
+const OUT_PATH = path.join(DIST_DIR, "dataset.db");
 
 const babelPath = path.join(WORK_DIR, "BabelCDB", "cards.cdb");
 const jaTextsPath = path.join(WORK_DIR, "ja_texts_merged.cdb");

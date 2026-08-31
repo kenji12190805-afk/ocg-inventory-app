@@ -13,7 +13,7 @@
 -- User-editable list of physical storage locations ("バインダー3", "デッキボックスA", ...).
 -- Combobox-style in the UI: pick an existing one, or type a new one that gets
 -- added here.
-CREATE TABLE storage_locations (
+CREATE TABLE IF NOT EXISTS storage_locations (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT NOT NULL UNIQUE,
   sort_order  INTEGER NOT NULL DEFAULT 0
@@ -21,7 +21,7 @@ CREATE TABLE storage_locations (
 
 -- One row per (card print, i.e. specific set+rarity) the user owns any copies of.
 -- print_id references the synced dataset's card_prints.id.
-CREATE TABLE inventory (
+CREATE TABLE IF NOT EXISTS inventory (
   id                    INTEGER PRIMARY KEY AUTOINCREMENT,
   print_id              INTEGER NOT NULL,
   quantity              INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
@@ -30,10 +30,10 @@ CREATE TABLE inventory (
   updated_at            TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_inventory_print_id ON inventory(print_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_print_id ON inventory(print_id);
 
 -- Registered decks, for the shortage-check feature (compare against inventory).
-CREATE TABLE decks (
+CREATE TABLE IF NOT EXISTS decks (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT NOT NULL,
   created_at  TEXT NOT NULL
@@ -42,7 +42,7 @@ CREATE TABLE decks (
 -- card_id references the synced dataset's cards.id (not a specific print --
 -- shortage checking is done at the card level, then the user picks which
 -- print(s) to count/register against, matching the brief's core flow).
-CREATE TABLE deck_cards (
+CREATE TABLE IF NOT EXISTS deck_cards (
   deck_id    INTEGER NOT NULL REFERENCES decks(id) ON DELETE CASCADE,
   card_id    INTEGER NOT NULL,
   quantity   INTEGER NOT NULL DEFAULT 1 CHECK (quantity BETWEEN 1 AND 3),
