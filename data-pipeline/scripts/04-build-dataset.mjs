@@ -71,9 +71,13 @@ for (const row of babel.all("SELECT id, name FROM texts")) {
 }
 babel.close();
 
-// ---- merge in Yugipedia-sourced fallback cards (see 03b-fetch-yugipedia-cards.mjs) for
-// cards BabelCDB doesn't have yet. Adds nothing for ids BabelCDB already covers -- 03b only
-// ever fetches names that didn't match BabelCDB in the first place. ----
+// ---- merge in Yugipedia-sourced fallback cards (see 03b-fetch-yugipedia-cards.mjs). Two
+// cases, both driven by the same fetched page data:
+//  - a card BabelCDB doesn't have at all yet: adds the full card (mechanics + JA text).
+//  - a card BabelCDB already has (mechanics are fine) but ja_texts_merged.cdb doesn't have
+//    JA text for yet: yugipediaJaById is still registered as a name/desc fallback below,
+//    but cardsById/englishNameById/idsByEnglishNameLower are left alone -- BabelCDB's real
+//    mechanics data always wins over anything reconstructed from Yugipedia. ----
 
 const yugipediaCardsPath = path.join(WORK_DIR, "yugipedia_cards.json");
 const yugipediaJaById = new Map();
@@ -81,7 +85,8 @@ let yugipediaFallbackCount = 0;
 if (existsSync(yugipediaCardsPath)) {
   const yugipediaCards = JSON.parse(readFileSync(yugipediaCardsPath, "utf8"));
   for (const c of yugipediaCards) {
-    if (cardsById.has(c.id)) continue; // BabelCDB wins if it somehow already has this id
+    yugipediaJaById.set(c.id, { name: c.nameJa, desc: c.descJa });
+    if (cardsById.has(c.id)) continue; // BabelCDB wins if it already has this id
     cardsById.set(c.id, {
       id: c.id,
       alias: 0,
@@ -102,10 +107,11 @@ if (existsSync(yugipediaCardsPath)) {
       if (!idsByEnglishNameLower.has(key)) idsByEnglishNameLower.set(key, []);
       idsByEnglishNameLower.get(key).push(c.id);
     }
-    yugipediaJaById.set(c.id, { name: c.nameJa, desc: c.descJa });
     yugipediaFallbackCount++;
   }
-  console.log(`Merged ${yugipediaFallbackCount} Yugipedia-fallback cards (not in BabelCDB) from ${yugipediaCardsPath}`);
+  console.log(
+    `Merged ${yugipediaFallbackCount} new cards + ${yugipediaJaById.size - yugipediaFallbackCount} ja_text-only fallbacks from ${yugipediaCardsPath}`,
+  );
 }
 
 // ---- load JA texts ----

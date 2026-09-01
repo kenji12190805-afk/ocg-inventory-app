@@ -161,25 +161,52 @@ function buildCardFromFields(fields, pageTitle) {
 async function main() {
   const printsPath = path.join(WORK_DIR, "prints.json");
   const babelPath = path.join(WORK_DIR, "BabelCDB", "cards.cdb");
+  const jaTextsPath = path.join(WORK_DIR, "ja_texts_merged.cdb");
   if (!existsSync(printsPath)) throw new Error(`Missing ${printsPath} -- run fetch:yugipedia first.`);
   if (!existsSync(babelPath)) throw new Error(`Missing ${babelPath} -- run fetch:babelcdb first.`);
+  if (!existsSync(jaTextsPath)) throw new Error(`Missing ${jaTextsPath} -- run fetch:ja-texts first.`);
 
   const printRows = JSON.parse(readFileSync(printsPath, "utf8"));
 
   const babel = new Database(babelPath, { readOnly: true });
-  const matchedKeys = new Set();
-  for (const row of babel.all("SELECT name FROM texts")) {
+  const idsByKey = new Map();
+  for (const row of babel.all("SELECT id, name FROM texts")) {
     const key = normalizeEnglishName(row.name ?? "");
-    if (key) matchedKeys.add(key);
+    if (!key) continue;
+    if (!idsByKey.has(key)) idsByKey.set(key, []);
+    idsByKey.get(key).push(Number(row.id));
   }
   babel.close();
 
+  // A BabelCDB id can be mechanically complete but still have no Japanese name/text yet --
+  // ja_texts_merged.cdb (the community JA patch) lags new sets independently of BabelCDB
+  // itself. Those cards need a Yugipedia fetch too: not for mechanics (BabelCDB already has
+  // the real thing), just to fill in ja_name/ja_text instead of falling back to the raw
+  // English name -- see how 04-build-dataset.mjs's yugipediaJaById is used as a fallback
+  // layer UNDER ja_texts_merged.cdb, never overriding it.
+  const jaDb = new Database(jaTextsPath, { readOnly: true });
+  const idsWithJaText = new Set(jaDb.all("SELECT id FROM texts").map((r) => Number(r.id)));
+  jaDb.close();
+
   const candidateNames = new Set();
+  let missingCardCount = 0;
+  let missingJaOnlyCount = 0;
   for (const row of printRows) {
     const key = normalizeEnglishName(row.cardNameEn);
-    if (key && !matchedKeys.has(key)) candidateNames.add(row.cardNameEn);
+    if (!key) continue;
+    const ids = idsByKey.get(key);
+    if (!ids) {
+      if (!candidateNames.has(row.cardNameEn)) missingCardCount++;
+      candidateNames.add(row.cardNameEn);
+    } else if (ids.some((id) => !idsWithJaText.has(id))) {
+      if (!candidateNames.has(row.cardNameEn)) missingJaOnlyCount++;
+      candidateNames.add(row.cardNameEn);
+    }
   }
-  console.log(`${candidateNames.size} distinct card names not in BabelCDB -- fetching their Yugipedia pages...`);
+  console.log(
+    `${candidateNames.size} distinct card names need a Yugipedia fetch ` +
+      `(${missingCardCount} not in BabelCDB at all, ${missingJaOnlyCount} in BabelCDB but missing ja_text) -- fetching...`,
+  );
 
   const titles = [...candidateNames];
   const batches = chunk(titles, TITLES_PER_BATCH);
