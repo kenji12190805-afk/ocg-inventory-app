@@ -56,20 +56,32 @@ function chunk(arr, size) {
   return out;
 }
 
+/** Just the Japanese name/text out of a parsed {{CardTable2}} field map -- all that's
+ *  needed for a card BabelCDB already has (correct mechanics) but ja_texts_merged.cdb
+ *  doesn't have text for yet. Returns null if there's no usable ja_name. */
+function extractJaText(fields) {
+  const jaNameRaw = fields.ja_name;
+  if (!jaNameRaw) return null;
+  const nameJa = stripRubyMarkup(jaNameRaw).trim();
+  if (!nameJa) return null;
+  const descJa = fields.ja_text ? stripRubyMarkup(fields.ja_text).trim() : "";
+  return { nameJa, descJa };
+}
+
 /** Builds a synthetic BabelCDB-shaped card from a parsed {{CardTable2}} field map, or
  *  returns { skip: reason } if the page isn't a normal playable card / has data we can't
- *  confidently map. */
+ *  confidently map. Only used for cards BabelCDB doesn't have at all -- needs a real
+ *  Konami passcode (`password`) to assign a stable id, so tokens (which don't have one)
+ *  can only ever be filled in via extractJaText against an id BabelCDB already assigned. */
 function buildCardFromFields(fields, pageTitle) {
   const password = (fields.password || "").replace(/\D/g, "");
   if (!password) return { skip: "no password/passcode field" };
   const id = Number(password);
   if (!Number.isFinite(id) || id <= 0) return { skip: `invalid password "${fields.password}"` };
 
-  const jaNameRaw = fields.ja_name;
-  if (!jaNameRaw) return { skip: "no ja_name field" };
-  const nameJa = stripRubyMarkup(jaNameRaw).trim();
-  if (!nameJa) return { skip: "empty ja_name after cleanup" };
-  const descJa = fields.ja_text ? stripRubyMarkup(fields.ja_text).trim() : "";
+  const ja = extractJaText(fields);
+  if (!ja) return { skip: "no ja_name field" };
+  const { nameJa, descJa } = ja;
 
   let cardType = 0;
   let race = 0;
@@ -90,8 +102,9 @@ function buildCardFromFields(fields, pageTitle) {
       if (bit === undefined) return { skip: `unknown ${fields.card_type} property "${prop}"` };
       cardType |= bit;
     }
-  } else if (fields.attribute || fields.types) {
+  } else if (fields.card_type === "Token" || fields.attribute || fields.types) {
     cardType |= OcgType.MONSTER;
+    if (fields.card_type === "Token") cardType |= OcgType.TOKEN;
 
     const attrName = (fields.attribute || "").trim().toUpperCase();
     if (attrName) {
@@ -170,11 +183,18 @@ async function main() {
 
   const babel = new Database(babelPath, { readOnly: true });
   const idsByKey = new Map();
+  const nameById = new Map();
   for (const row of babel.all("SELECT id, name FROM texts")) {
+    const id = Number(row.id);
+    nameById.set(id, row.name ?? "");
     const key = normalizeEnglishName(row.name ?? "");
     if (!key) continue;
     if (!idsByKey.has(key)) idsByKey.set(key, []);
-    idsByKey.get(key).push(Number(row.id));
+    idsByKey.get(key).push(id);
+  }
+  const aliasById = new Map();
+  for (const row of babel.all("SELECT id, alias FROM datas")) {
+    aliasById.set(Number(row.id), Number(row.alias));
   }
   babel.close();
 
@@ -183,36 +203,84 @@ async function main() {
   // itself. Those cards need a Yugipedia fetch too: not for mechanics (BabelCDB already has
   // the real thing), just to fill in ja_name/ja_text instead of falling back to the raw
   // English name -- see how 04-build-dataset.mjs's yugipediaJaById is used as a fallback
-  // layer UNDER ja_texts_merged.cdb, never overriding it.
+  // layer UNDER ja_texts_merged.cdb, never overriding it. An id whose `alias` (BabelCDB's
+  // own alt-art/errata pointer) already has ja_text is covered by 04's alias fallback for
+  // free, without a network fetch -- see hasJaTextOrAliasCovers.
   const jaDb = new Database(jaTextsPath, { readOnly: true });
   const idsWithJaText = new Set(jaDb.all("SELECT id FROM texts").map((r) => Number(r.id)));
   jaDb.close();
 
-  const candidateNames = new Set();
+  function hasJaTextOrAliasCovers(id) {
+    if (idsWithJaText.has(id)) return true;
+    const alias = aliasById.get(id) || 0;
+    return alias !== 0 && idsWithJaText.has(alias);
+  }
+
+  // Combined candidate map, keyed by normalized name (so a name reachable both via a print
+  // row and via the BabelCDB sweep below is only ever fetched once). needsFullCard means
+  // "not in BabelCDB at all -- extract id from the page's own password"; targetIds means
+  // "already has this BabelCDB id -- just needs ja_name/ja_text for it".
+  const candidates = new Map();
+  function addCandidate(title, needsFullCard, targetId) {
+    const key = normalizeEnglishName(title);
+    if (!key) return;
+    let c = candidates.get(key);
+    if (!c) {
+      c = { title, needsFullCard: false, targetIds: new Set() };
+      candidates.set(key, c);
+    }
+    if (needsFullCard) c.needsFullCard = true;
+    if (targetId) c.targetIds.add(targetId);
+  }
+
+  // Cards a collector would actually encounter: every Set Card Lists print row.
   let missingCardCount = 0;
-  let missingJaOnlyCount = 0;
+  let missingJaFromPrintsCount = 0;
   for (const row of printRows) {
     const key = normalizeEnglishName(row.cardNameEn);
     if (!key) continue;
     const ids = idsByKey.get(key);
     if (!ids) {
-      if (!candidateNames.has(row.cardNameEn)) missingCardCount++;
-      candidateNames.add(row.cardNameEn);
-    } else if (ids.some((id) => !idsWithJaText.has(id))) {
-      if (!candidateNames.has(row.cardNameEn)) missingJaOnlyCount++;
-      candidateNames.add(row.cardNameEn);
+      if (!candidates.has(key)) missingCardCount++;
+      addCandidate(row.cardNameEn, true, null);
+    } else {
+      for (const id of ids) {
+        if (!hasJaTextOrAliasCovers(id)) {
+          if (!candidates.has(key)) missingJaFromPrintsCount++;
+          addCandidate(row.cardNameEn, false, id);
+        }
+      }
     }
   }
+
+  // Every remaining BabelCDB card missing ja_text regardless of whether it showed up in a
+  // crawled print row -- tokens in particular usually aren't in a product's own Set Card
+  // Lists the way real printed cards are.
+  let missingJaDirectCount = 0;
+  for (const [id, name] of nameById) {
+    if (!name || hasJaTextOrAliasCovers(id)) continue;
+    const key = normalizeEnglishName(name);
+    if (candidates.get(key)?.targetIds.has(id)) continue; // already added above
+    missingJaDirectCount++;
+    addCandidate(name, false, id);
+  }
+
   console.log(
-    `${candidateNames.size} distinct card names need a Yugipedia fetch ` +
-      `(${missingCardCount} not in BabelCDB at all, ${missingJaOnlyCount} in BabelCDB but missing ja_text) -- fetching...`,
+    `${candidates.size} distinct card names need a Yugipedia fetch (${missingCardCount} not in BabelCDB at all, ` +
+      `${missingJaFromPrintsCount} in BabelCDB but missing ja_text (from prints), ` +
+      `${missingJaDirectCount} more missing ja_text found by sweeping all of BabelCDB) -- fetching...`,
   );
 
-  const titles = [...candidateNames];
+  const titles = [...candidates.values()].map((c) => c.title);
   const batches = chunk(titles, TITLES_PER_BATCH);
   const cards = [];
+  const jaOnlyEntries = [];
   const skipReasons = new Map();
   let noContent = 0;
+
+  function recordSkip(reason) {
+    skipReasons.set(reason, (skipReasons.get(reason) ?? 0) + 1);
+  }
 
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
@@ -224,32 +292,48 @@ async function main() {
         noContent++;
         continue;
       }
+      const info = candidates.get(normalizeEnglishName(page.title));
+      if (!info) continue; // shouldn't happen -- defensive only
       const blocks = extractTemplateBlocks(wikitext, "{{CardTable2");
       if (blocks.length === 0) {
-        skipReasons.set("no {{CardTable2}} template", (skipReasons.get("no {{CardTable2}} template") ?? 0) + 1);
+        recordSkip("no {{CardTable2}} template");
         continue;
       }
       const fields = parseTemplateFields(blocks[0]);
-      const result = buildCardFromFields(fields, page.title);
-      if (result.skip) {
-        skipReasons.set(result.skip, (skipReasons.get(result.skip) ?? 0) + 1);
-        continue;
+
+      if (info.needsFullCard) {
+        const result = buildCardFromFields(fields, page.title);
+        if (result.skip) recordSkip(result.skip);
+        else cards.push(result.card);
       }
-      cards.push(result.card);
+      if (info.targetIds.size > 0) {
+        const ja = extractJaText(fields);
+        if (!ja) recordSkip("no ja_name field (ja-text-only target)");
+        else for (const id of info.targetIds) jaOnlyEntries.push({ id, nameJa: ja.nameJa, descJa: ja.descJa });
+      }
     }
     if ((i + 1) % 10 === 0 || i === batches.length - 1) {
-      console.log(`  fetched ${Math.min((i + 1) * TITLES_PER_BATCH, titles.length)}/${titles.length} candidate pages, ${cards.length} cards built so far`);
+      console.log(
+        `  fetched ${Math.min((i + 1) * TITLES_PER_BATCH, titles.length)}/${titles.length} candidate pages, ` +
+          `${cards.length} new cards + ${jaOnlyEntries.length} ja-text fills so far`,
+      );
     }
     await sleep(REQUEST_DELAY_MS);
   }
 
-  // Dedupe by id (rare: two different print-row names resolving to the same card page).
-  const byId = new Map();
-  for (const c of cards) byId.set(c.id, c);
-  const uniqueCards = [...byId.values()];
+  // Dedupe by id (rare: two different candidate names resolving to the same card page).
+  const cardsById = new Map();
+  for (const c of cards) cardsById.set(c.id, c);
+  const jaOnlyById = new Map();
+  for (const e of jaOnlyEntries) jaOnlyById.set(e.id, e);
 
-  writeFileSync(OUT_PATH, JSON.stringify(uniqueCards, null, 0));
-  console.log(`Built ${uniqueCards.length} Yugipedia-fallback cards -> ${OUT_PATH}`);
+  writeFileSync(
+    OUT_PATH,
+    JSON.stringify({ cards: [...cardsById.values()], jaOnly: [...jaOnlyById.values()] }, null, 0),
+  );
+  console.log(
+    `Built ${cardsById.size} new cards + ${jaOnlyById.size} ja-text-only fills -> ${OUT_PATH}`,
+  );
   console.log(`${noContent} candidate pages had no content (missing/redirect).`);
   const topSkips = [...skipReasons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
   console.log("Top skip reasons:", topSkips);
