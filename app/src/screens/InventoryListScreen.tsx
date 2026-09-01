@@ -13,6 +13,29 @@ interface Row {
   card: Card;
 }
 
+type SortKey = 'updated' | 'name' | 'setCode' | 'quantity';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'updated', label: '更新日時' },
+  { value: 'name', label: 'カード名' },
+  { value: 'setCode', label: '型番' },
+  { value: 'quantity', label: '数量' },
+];
+
+function compareRows(a: Row, b: Row, key: SortKey): number {
+  switch (key) {
+    case 'name':
+      return normalizeForSearch(a.card.name_ja).localeCompare(normalizeForSearch(b.card.name_ja));
+    case 'setCode':
+      return a.print.set_code.localeCompare(b.print.set_code);
+    case 'quantity':
+      return a.inv.quantity - b.inv.quantity;
+    case 'updated':
+    default:
+      return a.inv.updated_at.localeCompare(b.inv.updated_at);
+  }
+}
+
 export default function InventoryListScreen() {
   const { dataset, local } = useDb();
   const [rows, setRows] = useState<Row[]>([]);
@@ -21,6 +44,8 @@ export default function InventoryListScreen() {
   const [query, setQuery] = useState('');
   const [selecting, setSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [sortKey, setSortKey] = useState<SortKey>('updated');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   async function reload(signal?: { cancelled: boolean }) {
     setLoading(true);
@@ -79,9 +104,12 @@ export default function InventoryListScreen() {
   if (rows.length === 0) return <div className="empty-state">まだ在庫が登録されていません</div>;
 
   const normalizedQuery = normalizeForSearch(query.trim());
-  const filteredRows = normalizedQuery
+  const filteredRows = (normalizedQuery
     ? rows.filter((r) => normalizeForSearch(r.card.name_ja).includes(normalizedQuery))
-    : rows;
+    : rows
+  )
+    .slice()
+    .sort((a, b) => compareRows(a, b, sortKey) * (sortDir === 'asc' ? 1 : -1));
 
   return (
     <div>
@@ -95,6 +123,25 @@ export default function InventoryListScreen() {
         />
         <button type="button" className="plain" style={{ flexShrink: 0 }} onClick={() => (selecting ? exitSelecting() : setSelecting(true))}>
           {selecting ? 'キャンセル' : '選択'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>並び替え</span>
+        <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="plain"
+          style={{ flexShrink: 0 }}
+          onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+        >
+          {sortDir === 'asc' ? '昇順 ▲' : '降順 ▼'}
         </button>
       </div>
 

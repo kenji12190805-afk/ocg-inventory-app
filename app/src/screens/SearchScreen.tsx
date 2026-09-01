@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDb } from '../DbContext';
-import { getPrintIdsForCards, searchCards } from '../db/datasetRepo';
-import { getOwnedCountByCardIds } from '../db/localRepo';
+import {
+  getPrintIdsForCards,
+  searchCards,
+  searchPrintsBySetCode,
+  suggestSetCodes,
+  type PrintSearchResult,
+} from '../db/datasetRepo';
+import { getInventoryForPrints, getOwnedCountByCardIds, incrementInventory } from '../db/localRepo';
 import type { Card } from '../db/types';
 import { ATTRIBUTES, RACES, SUPERTYPES, SPELL_TYPES, TRAP_TYPES, OcgType, cardTypeLabel } from '../gameConstants';
 
@@ -11,9 +17,21 @@ import { ATTRIBUTES, RACES, SUPERTYPES, SPELL_TYPES, TRAP_TYPES, OcgType, cardTy
 // missing art (tokens, some alt arts) just fails to load and is hidden via onError.
 const CARD_IMAGE_BASE = 'https://images.ygoprodeck.com/images/cards_small/';
 
+type Mode = 'name' | 'code';
+
 export default function SearchScreen() {
   const { dataset, local } = useDb();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // カード検索(名前・効果) / 型番検索 のタブ切り替え。URL に持たせることで、カード詳細から
+  // 戻ってきたときにも選んでいたタブが復元される(他のフィルタと同じ理由 -- 下記参照)。
+  const mode: Mode = searchParams.get('m') === 'code' ? 'code' : 'name';
+  function switchMode(next: Mode) {
+    const nextParams = new URLSearchParams(searchParams);
+    if (next === 'name') nextParams.delete('m');
+    else nextParams.set('m', next);
+    setSearchParams(nextParams, { replace: true });
+  }
 
   // The text field is local state, NOT derived from searchParams like the other filters:
   // feeding a controlled <input>'s value from router state (which round-trips through the
@@ -121,6 +139,92 @@ export default function SearchScreen() {
     };
   }, [dataset, local, results, visibleCount]);
 
+  // ---- 型番検索タブ ----
+
+  const [codeInput, setCodeInput] = useState(() => searchParams.get('code') ?? '');
+  const [codeSuggestions, setCodeSuggestions] = useState<string[]>([]);
+  const [showCodeSuggestions, setShowCodeSuggestions] = useState(false);
+  const [printResults, setPrintResults] = useState<PrintSearchResult[]>([]);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printInventory, setPrintInventory] = useState<Map<number, number>>(new Map());
+  const [justRegisteredPrintId, setJustRegisteredPrintId] = useState<number | null>(null);
+
+  // Keep the URL in sync (debounced) purely so "1つ前に戻る" restores the typed code --
+  // same reasoning as textInput above.
+  useEffect(() => {
+    if (mode !== 'code') return;
+    const handle = setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (codeInput) next.set('code', codeInput);
+          else next.delete('code');
+          return next;
+        },
+        { replace: true },
+      );
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [codeInput, mode, setSearchParams]);
+
+  useEffect(() => {
+    if (mode !== 'code' || !codeInput.trim()) {
+      setCodeSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      suggestSetCodes(dataset, codeInput.trim()).then((suggestions) => {
+        if (!cancelled) setCodeSuggestions(suggestions);
+      });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [dataset, mode, codeInput]);
+
+  useEffect(() => {
+    if (mode !== 'code' || codeInput.trim().length < 2) {
+      setPrintResults([]);
+      return;
+    }
+    let cancelled = false;
+    setPrintLoading(true);
+    const handle = setTimeout(() => {
+      searchPrintsBySetCode(dataset, codeInput.trim())
+        .then((results) => {
+          if (!cancelled) setPrintResults(results);
+        })
+        .finally(() => {
+          if (!cancelled) setPrintLoading(false);
+        });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [dataset, mode, codeInput]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const inv = await getInventoryForPrints(local, printResults.map((r) => r.print.id));
+      if (cancelled) return;
+      setPrintInventory(new Map([...inv].map(([printId, row]) => [printId, row.quantity])));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [local, printResults]);
+
+  async function registerByCode(printId: number) {
+    await incrementInventory(local, printId, 1);
+    setPrintInventory((prev) => new Map(prev).set(printId, (prev.get(printId) ?? 0) + 1));
+    setJustRegisteredPrintId(printId);
+    setTimeout(() => setJustRegisteredPrintId((id) => (id === printId ? null : id)), 1200);
+  }
+
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(searchParams);
     if (value === null) next.delete(key);
@@ -145,6 +249,17 @@ export default function SearchScreen() {
 
   return (
     <div>
+      <div className="chip-row">
+        <div className={`chip${mode === 'name' ? ' selected' : ''}`} onClick={() => switchMode('name')}>
+          カード検索
+        </div>
+        <div className={`chip${mode === 'code' ? ' selected' : ''}`} onClick={() => switchMode('code')}>
+          型番検索
+        </div>
+      </div>
+
+      {mode === 'name' && (
+        <>
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           type="search"
@@ -270,6 +385,96 @@ export default function SearchScreen() {
         >
           さらに表示 (残り{results.length - visibleCount}件)
         </button>
+      )}
+        </>
+      )}
+
+      {mode === 'code' && (
+        <>
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="search"
+                placeholder="型番で検索 (例: SUB1-JP001)"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                onFocus={() => setShowCodeSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowCodeSuggestions(false), 150)}
+                style={{ textTransform: 'uppercase' }}
+              />
+              <Link to="/camera" className="plain" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                📷
+              </Link>
+            </div>
+            {showCodeSuggestions && codeSuggestions.length > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 48,
+                  zIndex: 10,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  marginTop: 4,
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }}
+              >
+                {codeSuggestions.map((code) => (
+                  <div
+                    key={code}
+                    style={{ padding: '8px 12px', fontSize: 14, cursor: 'pointer' }}
+                    onMouseDown={() => {
+                      setCodeInput(code);
+                      setShowCodeSuggestions(false);
+                    }}
+                  >
+                    {code}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>
+            カード左下(または右下)に印字されている型番を入力すると、収録弾・レアリティまで特定して直接+1登録できます。
+          </p>
+
+          <div className="section-title">
+            検索結果 {printLoading ? '(検索中...)' : `(${printResults.length}件)`}
+          </div>
+          {codeInput.trim().length < 2 && (
+            <div className="empty-state">型番を2文字以上入力してください</div>
+          )}
+          {codeInput.trim().length >= 2 && printResults.length === 0 && !printLoading && (
+            <div className="empty-state">該当する型番が見つかりません</div>
+          )}
+          {printResults.map(({ print, card }) => {
+            const owned = printInventory.get(print.id) ?? 0;
+            return (
+              <div key={print.id} className="print-row">
+                <Link to={`/card/${card.id}`} className="info" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  <div className="name">{card.name_ja}</div>
+                  <div className="set-code">{print.set_code}</div>
+                  <div className="rarity">
+                    {print.set_name} / {print.rarity}
+                  </div>
+                </Link>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {owned > 0 && <div className="qty-value">×{owned}</div>}
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => registerByCode(print.id)}
+                  >
+                    {justRegisteredPrintId === print.id ? '登録済み' : '＋1登録'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </>
       )}
     </div>
   );

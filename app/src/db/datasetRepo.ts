@@ -225,6 +225,84 @@ export async function getPrintCountsBySetNames(
   return counts;
 }
 
+export interface PrintSearchResult {
+  print: CardPrint;
+  card: Card;
+}
+
+/** Prints whose set_code contains the given (case-insensitive) substring, joined with
+ *  their card. Powers the 型番検索 tab and the set-code camera-scan flow -- unlike name
+ *  search, a set_code (e.g. "SUB1-JP001") pins down an exact print (set + rarity), not
+ *  just a card, so a match here can register inventory directly without a disambiguation
+ *  step. */
+export async function searchPrintsBySetCode(
+  conn: SQLiteDBConnection,
+  query: string,
+  limit = 30,
+): Promise<PrintSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const result = await conn.query(
+    'SELECT * FROM card_prints WHERE UPPER(set_code) LIKE UPPER(?) ORDER BY set_code LIMIT ?',
+    [`%${trimmed}%`, limit],
+  );
+  const prints = (result.values ?? []) as CardPrint[];
+  const cards = await getCardsByIds(conn, [...new Set(prints.map((p) => p.card_id))]);
+  return prints
+    .map((print) => ({ print, card: cards.get(print.card_id) }))
+    .filter((r): r is PrintSearchResult => Boolean(r.card));
+}
+
+/** Distinct set_code values starting with the given prefix, for the 型番検索 tab's
+ *  autocomplete dropdown (feature request: プルダウンで表示し入力したら候補を出す). */
+export async function suggestSetCodes(
+  conn: SQLiteDBConnection,
+  prefix: string,
+  limit = 12,
+): Promise<string[]> {
+  const trimmed = prefix.trim();
+  if (!trimmed) return [];
+  const result = await conn.query(
+    'SELECT DISTINCT set_code FROM card_prints WHERE UPPER(set_code) LIKE UPPER(?) ORDER BY set_code LIMIT ?',
+    [`${trimmed}%`, limit],
+  );
+  return (result.values ?? []).map((row) => row.set_code as string);
+}
+
+// Recognizable set-code shape printed on real cards, e.g. "SUB1-JP001", "LOB-001",
+// "20AP-JP001" -- used to pull candidate codes out of noisy camera OCR text (English/digit
+// recognition, not the Japanese name OCR used by matchCardsByOcrText).
+const SET_CODE_PATTERN = /\b[A-Z0-9]{2,6}-[A-Z]{0,3}\d{2,4}\b/g;
+
+export function extractSetCodeCandidates(ocrText: string): string[] {
+  const cleaned = ocrText.toUpperCase().replace(/[^A-Z0-9\n -]/g, ' ');
+  return [...new Set(cleaned.match(SET_CODE_PATTERN) ?? [])];
+}
+
+/** Scans OCR'd text for set-code-shaped substrings and looks each one up against
+ *  card_prints. Unlike matchCardsByOcrText (card name -> possibly-ambiguous card, still
+ *  needs a print/rarity picked by hand), a matched set_code pins the exact print directly,
+ *  so results here can be registered into inventory with one tap. */
+export async function matchPrintsByOcrText(
+  conn: SQLiteDBConnection,
+  ocrText: string,
+  limit = 10,
+): Promise<PrintSearchResult[]> {
+  const candidates = extractSetCodeCandidates(ocrText);
+  const seen = new Set<number>();
+  const out: PrintSearchResult[] = [];
+  for (const code of candidates) {
+    const matches = await searchPrintsBySetCode(conn, code, limit);
+    for (const m of matches) {
+      if (seen.has(m.print.id)) continue;
+      seen.add(m.print.id);
+      out.push(m);
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
+
 export async function getSyncMeta(conn: SQLiteDBConnection): Promise<SyncMeta> {
   const result = await conn.query('SELECT key, value FROM sync_meta');
   const meta: SyncMeta = {};
