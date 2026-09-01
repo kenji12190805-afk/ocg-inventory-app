@@ -25,10 +25,32 @@ export default function SearchScreen() {
   const spellSubtype = spellParam === null ? undefined : Number(spellParam);
   const trapSubtype = trapParam === null ? undefined : Number(trapParam);
 
+  // Whether any filter is actually active. With none, "all cards" is ~15k rows -- querying
+  // and rendering that unfiltered pile as plain (non-virtualized) DOM list items pegs the
+  // WebView's main thread hard enough to drop/delay touch input, so we simply don't.
+  const hasFilter = Boolean(
+    text.trim() || attributeMask || supertype || spellSubtype !== undefined || trapSubtype !== undefined,
+  );
+
   const [results, setResults] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
+  // How many results are actually rendered -- grows via "さらに表示" (see PAGE_SIZE below).
+  // Same reasoning as hasFilter: even a single broad filter (e.g. just "モンスター") can
+  // still match thousands of cards, so results are paginated client-side rather than all
+  // mounted as DOM nodes at once. searchCards itself is NOT limited -- every match is
+  // found and reachable, just not all rendered up front (feature request #5).
+  const PAGE_SIZE = 60;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [text, attributeMask, supertype, race, spellSubtype, trapSubtype]);
+
+  useEffect(() => {
+    if (!hasFilter) {
+      setResults([]);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     searchCards(dataset, {
@@ -48,7 +70,9 @@ export default function SearchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [dataset, text, attributeMask, supertype, race, spellSubtype, trapSubtype]);
+  }, [dataset, hasFilter, text, attributeMask, supertype, race, spellSubtype, trapSubtype]);
+
+  const visibleResults = results.slice(0, visibleCount);
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(searchParams);
@@ -163,8 +187,13 @@ export default function SearchScreen() {
       <div className="section-title">
         検索結果 {loading ? '(検索中...)' : `(${results.length}件)`}
       </div>
-      {results.length === 0 && !loading && <div className="empty-state">該当するカードがありません</div>}
-      {results.map((c) => (
+      {!hasFilter && (
+        <div className="empty-state">カード名・効果を入力するか、種類/属性で絞り込んでください</div>
+      )}
+      {hasFilter && results.length === 0 && !loading && (
+        <div className="empty-state">該当するカードがありません</div>
+      )}
+      {visibleResults.map((c) => (
         <Link key={c.id} to={`/card/${c.id}`} className="card-list-item">
           <img
             className="card-thumb"
@@ -184,6 +213,16 @@ export default function SearchScreen() {
           </div>
         </Link>
       ))}
+      {results.length > visibleCount && (
+        <button
+          type="button"
+          className="plain"
+          style={{ width: '100%', marginTop: 12 }}
+          onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+        >
+          さらに表示 (残り{results.length - visibleCount}件)
+        </button>
+      )}
     </div>
   );
 }
