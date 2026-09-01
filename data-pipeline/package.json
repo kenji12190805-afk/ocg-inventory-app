@@ -10,7 +10,8 @@
     "fetch:yugipedia": "node scripts/03-fetch-yugipedia-prints.mjs",
     "fetch:yugipedia-cards": "node scripts/03b-fetch-yugipedia-cards.mjs",
     "build": "node scripts/04-build-dataset.mjs",
-    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run fetch:yugipedia-cards && npm run build"
+    "changelog": "node scripts/05-generate-changelog.mjs",
+    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run fetch:yugipedia-cards && npm run build && npm run changelog"
   },
   "dependencies": {
     "node-sqlite3-wasm": "^0.8.60"

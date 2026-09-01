@@ -221,7 +221,8 @@ button.primary {
   cursor: pointer;
 }
 
-button.plain {
+.plain {
+  display: inline-block;
   background: none;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -229,6 +230,7 @@ button.plain {
   font-size: 13px;
   cursor: pointer;
   color: var(--text);
+  text-decoration: none;
 }
 
 select {

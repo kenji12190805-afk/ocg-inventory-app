@@ -39,6 +39,9 @@ jobs:
       - name: Build dataset
         run: npm run build
 
+      - name: Generate changelog (diff against the currently-live dataset)
+        run: npm run changelog
+
       - name: Publish dataset as a release
         uses: softprops/action-gh-release@v2
         with:
@@ -48,3 +51,4 @@ jobs:
           files: |
             data-pipeline/dist/dataset.db
             data-pipeline/dist/meta.json
+            data-pipeline/dist/changelog.json

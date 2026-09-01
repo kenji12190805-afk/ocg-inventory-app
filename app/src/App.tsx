@@ -11,6 +11,7 @@ import DeckListScreen from './screens/DeckListScreen';
 import DeckDetailScreen from './screens/DeckDetailScreen';
 import CameraRegisterScreen from './screens/CameraRegisterScreen';
 import StatsScreen from './screens/StatsScreen';
+import ChangelogScreen from './screens/ChangelogScreen';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/storage" element={<StorageLocationsScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
               <Route path="/stats" element={<StatsScreen />} />
+              <Route path="/changelog" element={<ChangelogScreen />} />
             </Routes>
           </div>
         </DbProvider>

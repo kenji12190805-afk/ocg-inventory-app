@@ -78,6 +78,11 @@ export default function SettingsScreen() {
       <button className="primary" style={{ marginTop: 16 }} onClick={handleResync} disabled={syncing}>
         {syncing ? '同期中...' : '最新データを再取得'}
       </button>
+      <div style={{ marginTop: 8 }}>
+        <Link to="/changelog">
+          <button className="plain">前回の同期で追加されたカードを見る</button>
+        </Link>
+      </div>
 
       <div className="section-title">コレクション統計</div>
       <Link to="/stats">

@@ -82,3 +82,12 @@ const META_URL =
 export function getMetaUrl(): string {
   return META_URL;
 }
+
+// Diff of the last sync vs. the one before it (see data-pipeline/scripts/05-generate-
+// changelog.mjs) -- what the "新着カード" screen shows.
+const CHANGELOG_URL =
+  'https://github.com/kenji12190805-afk/ocg-inventory-app/releases/download/dataset-latest/changelog.json';
+
+export function getChangelogUrl(): string {
+  return CHANGELOG_URL;
+}
