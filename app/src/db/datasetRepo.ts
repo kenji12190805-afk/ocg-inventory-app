@@ -300,7 +300,75 @@ export async function matchPrintsByOcrText(
       if (out.length >= limit) return out;
     }
   }
+  // The regex above only fires on OCR text shaped exactly like a set code (with a
+  // hyphen in the right place); the stencil-style font OCG set codes use trips up
+  // Tesseract's default English model often enough that the raw text rarely looks that
+  // clean. Rather than give up with zero candidates, fall back to fuzzy (edit-distance)
+  // matching against every known set_code so a few wrong characters still surface the
+  // right print.
+  if (out.length === 0) return fuzzyMatchSetCode(conn, ocrText, limit);
   return out;
+}
+
+function normalizeForCodeMatch(s: string): string {
+  return s.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** Classic edit-distance DP -- number of single-character insert/delete/substitute
+ *  operations to turn `a` into `b`. Single-row (not full-matrix) to keep memory flat. */
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prevRow = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    const currRow = [i];
+    for (let j = 1; j <= b.length; j += 1) {
+      currRow[j] = a[i - 1] === b[j - 1]
+        ? prevRow[j - 1]
+        : 1 + Math.min(prevRow[j - 1], prevRow[j], currRow[j - 1]);
+    }
+    prevRow = currRow;
+  }
+  return prevRow[b.length];
+}
+
+/** Fallback for when OCR text doesn't contain anything shaped like a real set_code (very
+ *  common -- the stencil-style font OCG codes are printed in trips up Tesseract's default
+ *  English model, e.g. "DBPR-JP043" misread as "EPILIT04"). Compares the OCR text against
+ *  every known set_code by edit distance (punctuation/whitespace ignored on both sides) and
+ *  returns the closest ones, so a handful of wrong characters still surfaces the right
+ *  print instead of zero results. */
+export async function fuzzyMatchSetCode(
+  conn: SQLiteDBConnection,
+  ocrText: string,
+  limit = 10,
+): Promise<PrintSearchResult[]> {
+  const needle = normalizeForCodeMatch(ocrText).slice(0, 40);
+  if (needle.length < 4) return [];
+
+  const result = await conn.query('SELECT DISTINCT set_code FROM card_prints');
+  const codes = (result.values ?? []).map((row) => row.set_code as string);
+
+  const maxDistance = Math.max(3, Math.ceil(needle.length * 0.6));
+  const scored = codes
+    .map((code) => ({ code, dist: levenshteinDistance(needle, normalizeForCodeMatch(code)) }))
+    .filter((s) => s.dist <= maxDistance)
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, limit);
+
+  const out: PrintSearchResult[] = [];
+  const seen = new Set<number>();
+  for (const { code } of scored) {
+    const matches = await searchPrintsBySetCode(conn, code, limit);
+    for (const m of matches) {
+      if (m.print.set_code !== code || seen.has(m.print.id)) continue;
+      seen.add(m.print.id);
+      out.push(m);
+    }
+    if (out.length >= limit) break;
+  }
+  return out.slice(0, limit);
 }
 
 export async function getSyncMeta(conn: SQLiteDBConnection): Promise<SyncMeta> {
