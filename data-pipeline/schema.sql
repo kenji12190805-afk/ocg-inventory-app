@@ -52,7 +52,10 @@ CREATE TABLE card_prints (
 );
 
 CREATE INDEX idx_card_prints_card_id ON card_prints(card_id);
-CREATE UNIQUE INDEX idx_card_prints_unique ON card_prints(set_code, card_id);
+-- Same set_code + card can legitimately appear more than once at different rarities (e.g.
+-- a set sold in both a regular and a "Prismatic Secret Rare" extended-art printing under
+-- the same print code) -- rarity is part of the row's identity, not incidental to it.
+CREATE UNIQUE INDEX idx_card_prints_unique ON card_prints(set_code, card_id, rarity);
 
 -- Pipeline/build bookkeeping, read by the app to decide whether a newer dataset
 -- is available (drives the "new set synced" notification feature).

@@ -66,6 +66,14 @@ export function stripWikiLink(text) {
   return text.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (_, target, display) => display || target).trim();
 }
 
+// Some Set list rarity fields carry an inline "//description::(...)" note (e.g. "Prismatic
+// Secret Rare //description::(extended art)", or -- with no real rarity at all -- a bare
+// "//description::(Orange)" marking a color variant). Strip the annotation itself; a
+// segment that's ONLY an annotation becomes "" and is filtered out by the caller.
+export function stripRarityAnnotation(text) {
+  return text.replace(/\/\/\s*description::.*$/i, "").trim();
+}
+
 export function deriveSetName(pageTitle) {
   return pageTitle.replace(/^Set Card Lists:/, "").replace(/\s*\(OCG-JP\)\s*$/, "").trim();
 }
@@ -129,7 +137,7 @@ export function parseSetListBlock(block, setName) {
     if (!cardNameEn) continue;
     const rarityField = fields[2];
     const rarities = rarityField
-      ? rarityField.split(",").map((s) => s.trim()).filter(Boolean)
+      ? rarityField.split(",").map((s) => stripRarityAnnotation(s)).filter(Boolean)
       : defaultRarity
         ? [defaultRarity]
         : [];
