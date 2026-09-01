@@ -1,5 +1,6 @@
 import { HashRouter, NavLink, Route, Routes } from 'react-router-dom';
 import { DbProvider } from './DbContext';
+import BackButtonHandler from './BackButtonHandler';
 import UpdateBanner from './UpdateBanner';
 import SearchScreen from './screens/SearchScreen';
 import CardDetailScreen from './screens/CardDetailScreen';
@@ -14,6 +15,7 @@ import StatsScreen from './screens/StatsScreen';
 export default function App() {
   return (
     <HashRouter>
+      <BackButtonHandler />
       <div className="app-shell">
         <div className="app-header">遊戯王OCG在庫</div>
         <DbProvider>

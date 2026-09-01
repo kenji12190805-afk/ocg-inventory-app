@@ -122,6 +122,16 @@ input[type='search'] {
   color: inherit;
 }
 
+.card-thumb {
+  width: 42px;
+  height: 61px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
 .card-list-item .name {
   font-weight: 600;
   font-size: 15px;

@@ -1,5 +1,6 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { normalizeForSearch } from './normalize';
+import { SPELL_SUBTYPE_BITS, TRAP_SUBTYPE_BITS } from '../gameConstants';
 import type { Card, CardPrint, SyncMeta } from './types';
 
 function rowToCard(row: any): Card {
@@ -26,13 +27,13 @@ export interface SearchFilters {
   attributeMask?: number; // OR of selected ATTRIBUTES values, 0/undefined = no filter
   raceMask?: number; // OR of selected RACES values
   supertypeMask?: number; // OR of selected SUPERTYPES values
+  // Spell/trap subtype (see SPELL_TYPES/TRAP_TYPES in gameConstants.ts): undefined = no
+  // filter, 0 = the "normal" sentinel (none of the subtype bits set), else that bit.
+  spellSubtype?: number;
+  trapSubtype?: number;
 }
 
-export async function searchCards(
-  conn: SQLiteDBConnection,
-  filters: SearchFilters,
-  limit = 100,
-): Promise<Card[]> {
+export async function searchCards(conn: SQLiteDBConnection, filters: SearchFilters): Promise<Card[]> {
   const clauses: string[] = [];
   const params: unknown[] = [];
 
@@ -53,12 +54,29 @@ export async function searchCards(
     clauses.push('(card_type & ?) != 0');
     params.push(filters.supertypeMask);
   }
+  if (filters.spellSubtype !== undefined) {
+    if (filters.spellSubtype === 0) {
+      clauses.push('(card_type & ?) = 0');
+      params.push(SPELL_SUBTYPE_BITS);
+    } else {
+      clauses.push('(card_type & ?) != 0');
+      params.push(filters.spellSubtype);
+    }
+  }
+  if (filters.trapSubtype !== undefined) {
+    if (filters.trapSubtype === 0) {
+      clauses.push('(card_type & ?) = 0');
+      params.push(TRAP_SUBTYPE_BITS);
+    } else {
+      clauses.push('(card_type & ?) != 0');
+      params.push(filters.trapSubtype);
+    }
+  }
 
+  // No LIMIT: the dataset is ~15k cards and any real filter narrows it far below what's
+  // comfortable to scroll, so cap-at-100 was hiding legitimate results (feature request #5).
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  const result = await conn.query(
-    `SELECT * FROM cards ${where} ORDER BY name_ja_normalized LIMIT ?`,
-    [...params, limit],
-  );
+  const result = await conn.query(`SELECT * FROM cards ${where} ORDER BY name_ja_normalized`, params);
   return (result.values ?? []).map(rowToCard);
 }
 

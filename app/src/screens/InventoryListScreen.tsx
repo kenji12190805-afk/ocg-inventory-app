@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDb } from '../DbContext';
 import { listInventory } from '../db/localRepo';
 import { getCard, getPrint } from '../db/datasetRepo';
+import { normalizeForSearch } from '../db/normalize';
 import type { Card, CardPrint, InventoryRow, StorageLocation } from '../db/types';
 import { listStorageLocations } from '../db/localRepo';
 
@@ -17,6 +18,7 @@ export default function InventoryListScreen() {
   const [rows, setRows] = useState<Row[]>([]);
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -48,10 +50,23 @@ export default function InventoryListScreen() {
   if (loading) return <div className="empty-state">読み込み中...</div>;
   if (rows.length === 0) return <div className="empty-state">まだ在庫が登録されていません</div>;
 
+  const normalizedQuery = normalizeForSearch(query.trim());
+  const filteredRows = normalizedQuery
+    ? rows.filter((r) => normalizeForSearch(r.card.name_ja).includes(normalizedQuery))
+    : rows;
+
   return (
     <div>
-      <div className="section-title">在庫一覧 ({rows.length}件)</div>
-      {rows.map(({ inv, print, card }) => (
+      <input
+        type="search"
+        placeholder="在庫内をカード名で検索"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        style={{ marginBottom: 12 }}
+      />
+      <div className="section-title">在庫一覧 ({filteredRows.length}件)</div>
+      {filteredRows.length === 0 && <div className="empty-state">該当する在庫がありません</div>}
+      {filteredRows.map(({ inv, print, card }) => (
         <Link key={inv.id} to={`/card/${card.id}`} className="card-list-item">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="name">{card.name_ja}</div>

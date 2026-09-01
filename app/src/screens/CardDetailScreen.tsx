@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDb } from '../DbContext';
 import { getCard, getPrintsForCard } from '../db/datasetRepo';
 import {
@@ -13,6 +13,7 @@ import { cardTypeLabel } from '../gameConstants';
 
 export default function CardDetailScreen() {
   const { cardId } = useParams();
+  const navigate = useNavigate();
   const { dataset, local } = useDb();
   const [card, setCard] = useState<Card | null>(null);
   const [prints, setPrints] = useState<CardPrint[]>([]);
@@ -50,9 +51,19 @@ export default function CardDetailScreen() {
 
   return (
     <div>
-      <Link to="/" className="badge" style={{ display: 'inline-block', marginBottom: 8 }}>
-        ← 検索に戻る
-      </Link>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <button
+          type="button"
+          className="badge"
+          style={{ fontFamily: 'inherit', cursor: 'pointer' }}
+          onClick={() => navigate(-1)}
+        >
+          ‹ 1つ前に戻る
+        </button>
+        <Link to="/" className="badge" style={{ display: 'inline-block' }}>
+          ← 検索に戻る
+        </Link>
+      </div>
       <h2 style={{ margin: '4px 0' }}>{card.name_ja}</h2>
       <div className="meta">
         {cardTypeLabel(card.card_type)}
