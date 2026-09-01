@@ -8,6 +8,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import path from "node:path";
 import pkg from "node-sqlite3-wasm";
 import { normalizeForSearch } from "./lib/normalize.mjs";
+import { normalizeEnglishName } from "./lib/name-matching.mjs";
 
 const { Database } = pkg;
 
@@ -58,28 +59,6 @@ for (const row of babel.all("SELECT id, alias, setcode, type, atk, def, level, r
   });
 }
 
-// Matching key for the BabelCDB<->Yugipedia English-name join. Strips two real-world
-// quirks found by auditing unmatched prints against a full Yugipedia crawl:
-//  - invisible Unicode formatting marks (zero-width space/non-joiner/joiner, left/right-
-//    to-left marks, BOM) that MediaWiki sometimes embeds in card-name wikilinks -- present
-//    on both sides in principle, so stripped symmetrically here.
-//  - a trailing " (card)" Wikipedia-style disambiguation suffix Yugipedia adds to some
-//    Set Card Lists entries whose card name collides with a game-mechanic/keyword page
-//    (e.g. "Shining Draw (card)", "Ice Barrier (card)").
-// Built from numeric code points (not literal characters) so the invisible marks
-// themselves are never pasted into this source file: U+200B..U+200F (zero-width
-// space/non-joiner/joiner, left-to-right/right-to-left marks) and U+FEFF (BOM).
-const INVISIBLE_MARK_CODEPOINTS = [0x200b, 0x200c, 0x200d, 0x200e, 0x200f, 0xfeff];
-const INVISIBLE_MARKS_RE = new RegExp(`[${INVISIBLE_MARK_CODEPOINTS.map((c) => `\\u${c.toString(16).padStart(4, "0")}`).join("")}]`, "g");
-
-function normalizeEnglishName(name) {
-  return name
-    .replace(INVISIBLE_MARKS_RE, "")
-    .replace(/\s*\(card\)$/i, "")
-    .trim()
-    .toLowerCase();
-}
-
 const englishNameById = new Map();
 const idsByEnglishNameLower = new Map();
 for (const row of babel.all("SELECT id, name FROM texts")) {
@@ -91,6 +70,43 @@ for (const row of babel.all("SELECT id, name FROM texts")) {
   if (key) idsByEnglishNameLower.get(key).push(id);
 }
 babel.close();
+
+// ---- merge in Yugipedia-sourced fallback cards (see 03b-fetch-yugipedia-cards.mjs) for
+// cards BabelCDB doesn't have yet. Adds nothing for ids BabelCDB already covers -- 03b only
+// ever fetches names that didn't match BabelCDB in the first place. ----
+
+const yugipediaCardsPath = path.join(WORK_DIR, "yugipedia_cards.json");
+const yugipediaJaById = new Map();
+let yugipediaFallbackCount = 0;
+if (existsSync(yugipediaCardsPath)) {
+  const yugipediaCards = JSON.parse(readFileSync(yugipediaCardsPath, "utf8"));
+  for (const c of yugipediaCards) {
+    if (cardsById.has(c.id)) continue; // BabelCDB wins if it somehow already has this id
+    cardsById.set(c.id, {
+      id: c.id,
+      alias: 0,
+      cardType: c.cardType,
+      race: c.race,
+      attribute: c.attribute,
+      atk: c.atk,
+      def: c.def,
+      level: c.level,
+      lscale: c.lscale,
+      rscale: c.rscale,
+      linkMarker: c.linkMarker,
+      archetypeSetcodes: [], // BabelCDB's own numeric scheme -- Yugipedia has no equivalent
+    });
+    englishNameById.set(c.id, c.nameEn);
+    const key = normalizeEnglishName(c.nameEn);
+    if (key) {
+      if (!idsByEnglishNameLower.has(key)) idsByEnglishNameLower.set(key, []);
+      idsByEnglishNameLower.get(key).push(c.id);
+    }
+    yugipediaJaById.set(c.id, { name: c.nameJa, desc: c.descJa });
+    yugipediaFallbackCount++;
+  }
+  console.log(`Merged ${yugipediaFallbackCount} Yugipedia-fallback cards (not in BabelCDB) from ${yugipediaCardsPath}`);
+}
 
 // ---- load JA texts ----
 
@@ -152,8 +168,9 @@ const insertCard = out.prepare(
 let cardCount = 0;
 for (const card of cardsById.values()) {
   const ja = jaTextById.get(card.id);
-  const nameJa = ja?.name || englishNameById.get(card.id) || `カード<${card.id}>`;
-  const descJa = ja?.desc || "";
+  const yugipediaJa = yugipediaJaById.get(card.id);
+  const nameJa = ja?.name || yugipediaJa?.name || englishNameById.get(card.id) || `カード<${card.id}>`;
+  const descJa = ja?.desc || yugipediaJa?.desc || "";
   insertCard.run([
     card.id,
     card.alias,
@@ -218,5 +235,7 @@ writeFileSync(
   }),
 );
 
-console.log(`Dataset built: ${cardCount} cards, ${resolvedPrints.length} prints -> ${OUT_PATH}`);
+console.log(
+  `Dataset built: ${cardCount} cards (${yugipediaFallbackCount} Yugipedia-fallback), ${resolvedPrints.length} prints -> ${OUT_PATH}`,
+);
 console.log(`Meta written -> ${metaPath}`);

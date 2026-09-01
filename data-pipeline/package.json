@@ -8,8 +8,9 @@
     "fetch:babelcdb": "node scripts/01-fetch-babelcdb.mjs",
     "fetch:ja-texts": "node scripts/02-fetch-ja-texts.mjs",
     "fetch:yugipedia": "node scripts/03-fetch-yugipedia-prints.mjs",
+    "fetch:yugipedia-cards": "node scripts/03b-fetch-yugipedia-cards.mjs",
     "build": "node scripts/04-build-dataset.mjs",
-    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run build"
+    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run fetch:yugipedia-cards && npm run build"
   },
   "dependencies": {
     "node-sqlite3-wasm": "^0.8.60"

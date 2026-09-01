@@ -33,6 +33,9 @@ jobs:
       - name: Fetch Yugipedia set/rarity data
         run: npm run fetch:yugipedia
 
+      - name: Fetch Yugipedia fallback cards (for cards BabelCDB doesn't have yet)
+        run: npm run fetch:yugipedia-cards
+
       - name: Build dataset
         run: npm run build
 
