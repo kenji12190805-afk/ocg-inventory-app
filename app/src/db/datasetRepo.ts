@@ -102,6 +102,28 @@ export async function getPrint(conn: SQLiteDBConnection, printId: number): Promi
   return (result.values?.[0] as CardPrint) ?? null;
 }
 
+/** Print ids grouped by card id -- feeds localRepo's getOwnedCountByCardIds so search
+ *  results can show how many of each card are already in inventory (across all its
+ *  prints). Bulk version of getPrintsForCard, for a whole page of search results at once. */
+export async function getPrintIdsForCards(
+  conn: SQLiteDBConnection,
+  cardIds: number[],
+): Promise<Map<number, number[]>> {
+  const map = new Map<number, number[]>();
+  if (cardIds.length === 0) return map;
+  const placeholders = cardIds.map(() => '?').join(',');
+  const result = await conn.query(
+    `SELECT id, card_id FROM card_prints WHERE card_id IN (${placeholders})`,
+    cardIds,
+  );
+  for (const row of result.values ?? []) {
+    const list = map.get(row.card_id);
+    if (list) list.push(row.id);
+    else map.set(row.card_id, [row.id]);
+  }
+  return map;
+}
+
 /** Exact (post-normalization) name match -- used by deck-list text import. Multiple cards
  *  can share a name (alt art / errata reprints under a different BabelCDB id); the caller
  *  picks one (lowest id) as canonical. */

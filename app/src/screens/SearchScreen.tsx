@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useDb } from '../DbContext';
-import { searchCards } from '../db/datasetRepo';
+import { getPrintIdsForCards, searchCards } from '../db/datasetRepo';
+import { getOwnedCountByCardIds } from '../db/localRepo';
 import type { Card } from '../db/types';
 import { ATTRIBUTES, RACES, SUPERTYPES, SPELL_TYPES, TRAP_TYPES, OcgType, cardTypeLabel } from '../gameConstants';
 
@@ -11,12 +12,36 @@ import { ATTRIBUTES, RACES, SUPERTYPES, SPELL_TYPES, TRAP_TYPES, OcgType, cardTy
 const CARD_IMAGE_BASE = 'https://images.ygoprodeck.com/images/cards_small/';
 
 export default function SearchScreen() {
-  const { dataset } = useDb();
+  const { dataset, local } = useDb();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state lives in the URL (not useState) so that navigating to a card and back
-  // (browser/hardware back) restores the exact same search instead of resetting it.
-  const text = searchParams.get('q') ?? '';
+  // The text field is local state, NOT derived from searchParams like the other filters:
+  // feeding a controlled <input>'s value from router state (which round-trips through the
+  // History API on every keystroke) broke IME composition on Android -- certain kana
+  // (e.g. "で") became impossible to type because the input's value got reset mid-
+  // composition. Local state changes synchronously with onChange like a normal input, so
+  // composition is never disturbed; it's synced to the URL separately (debounced) purely
+  // so "1つ前に戻る" still restores it -- see the sync effect below.
+  const [textInput, setTextInput] = useState(() => searchParams.get('q') ?? '');
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (textInput) next.set('q', textInput);
+          else next.delete('q');
+          return next;
+        },
+        { replace: true },
+      );
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [textInput, setSearchParams]);
+
+  // Filter state (other than text) lives in the URL (not useState) so that navigating to a
+  // card and back (browser/hardware back) restores the exact same search instead of
+  // resetting it.
   const attributeMask = Number(searchParams.get('attr') ?? 0);
   const supertype = Number(searchParams.get('type') ?? 0);
   const race = Number(searchParams.get('race') ?? 0);
@@ -29,7 +54,7 @@ export default function SearchScreen() {
   // and rendering that unfiltered pile as plain (non-virtualized) DOM list items pegs the
   // WebView's main thread hard enough to drop/delay touch input, so we simply don't.
   const hasFilter = Boolean(
-    text.trim() || attributeMask || supertype || spellSubtype !== undefined || trapSubtype !== undefined,
+    textInput.trim() || attributeMask || supertype || spellSubtype !== undefined || trapSubtype !== undefined,
   );
 
   const [results, setResults] = useState<Card[]>([]);
@@ -44,7 +69,7 @@ export default function SearchScreen() {
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [text, attributeMask, supertype, race, spellSubtype, trapSubtype]);
+  }, [textInput, attributeMask, supertype, race, spellSubtype, trapSubtype]);
 
   useEffect(() => {
     if (!hasFilter) {
@@ -54,7 +79,7 @@ export default function SearchScreen() {
     let cancelled = false;
     setLoading(true);
     searchCards(dataset, {
-      text,
+      text: textInput,
       attributeMask,
       raceMask: supertype === OcgType.MONSTER ? race : undefined,
       supertypeMask: supertype || undefined,
@@ -70,9 +95,31 @@ export default function SearchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [dataset, hasFilter, text, attributeMask, supertype, race, spellSubtype, trapSubtype]);
+  }, [dataset, hasFilter, textInput, attributeMask, supertype, race, spellSubtype, trapSubtype]);
 
   const visibleResults = results.slice(0, visibleCount);
+
+  // Owned quantity (summed across every print) for each currently-rendered card, so the
+  // search list can show what's already in inventory (feature request: link search results
+  // to inventory counts). Only fetched for the visible slice, not the whole result set.
+  const [ownedCounts, setOwnedCounts] = useState<Map<number, number>>(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    const visibleIds = results.slice(0, visibleCount).map((c) => c.id);
+    if (visibleIds.length === 0) {
+      setOwnedCounts(new Map());
+      return;
+    }
+    (async () => {
+      const printIdsByCard = await getPrintIdsForCards(dataset, visibleIds);
+      const owned = await getOwnedCountByCardIds(local, printIdsByCard);
+      if (!cancelled) setOwnedCounts(owned);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dataset, local, results, visibleCount]);
 
   function setParam(key: string, value: string | null) {
     const next = new URLSearchParams(searchParams);
@@ -102,8 +149,8 @@ export default function SearchScreen() {
         <input
           type="search"
           placeholder="カード名・効果で検索"
-          value={text}
-          onChange={(e) => setParam('q', e.target.value || null)}
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
         />
         <Link to="/camera" className="plain" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           📷
@@ -211,6 +258,7 @@ export default function SearchScreen() {
               {c.card_type & 1 ? ` / ATK ${c.atk} DEF ${c.def} / Lv${c.level}` : ''}
             </div>
           </div>
+          {ownedCounts.get(c.id) ? <div className="qty-value">×{ownedCounts.get(c.id)}</div> : null}
         </Link>
       ))}
       {results.length > visibleCount && (
