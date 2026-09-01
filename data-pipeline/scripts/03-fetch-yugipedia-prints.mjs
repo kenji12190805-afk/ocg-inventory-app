@@ -66,12 +66,15 @@ export function stripWikiLink(text) {
   return text.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (_, target, display) => display || target).trim();
 }
 
-// Some Set list rarity fields carry an inline "//description::(...)" note (e.g. "Prismatic
-// Secret Rare //description::(extended art)", or -- with no real rarity at all -- a bare
-// "//description::(Orange)" marking a color variant). Strip the annotation itself; a
-// segment that's ONLY an annotation becomes "" and is filtered out by the caller.
+// Some Set list rarity fields carry an inline "//..." wiki-internal note after the real
+// rarity value -- seen so far: "//description::(extended art)", "//description :: (alt
+// artwork)" (space before "::"), "//force-SMW", and with no real rarity at all, a bare
+// "//description::(Orange)" marking a color variant. Rarity names never legitimately
+// contain "//" themselves, so strip everything from the first "//" onward rather than
+// matching specific known keywords (there's no reason to expect this is an exhaustive
+// list). A segment that's ONLY an annotation becomes "" and is filtered out by the caller.
 export function stripRarityAnnotation(text) {
-  return text.replace(/\/\/\s*description::.*$/i, "").trim();
+  return text.replace(/\/\/.*$/, "").trim();
 }
 
 export function deriveSetName(pageTitle) {
