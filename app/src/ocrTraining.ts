@@ -39,3 +39,41 @@ export async function saveOcrTrainingSample(imageDataUrl: string, setCode: strin
     console.error('failed to save OCR training sample', e);
   }
 }
+
+export interface OcrTrainingStats {
+  totalSamples: number;
+  uniqueSetCodes: number;
+  lastSavedAt: string | null;
+}
+
+/** Reads back the manifest saveOcrTrainingSample has been appending to, purely so the
+ *  Settings screen can show the user something concrete ("N samples saved") instead of
+ *  the collection happening invisibly in the background. */
+export async function getOcrTrainingStats(): Promise<OcrTrainingStats> {
+  try {
+    const { data } = await Filesystem.readFile({ path: MANIFEST_PATH, directory: Directory.Data, encoding: Encoding.UTF8 });
+    const text = typeof data === 'string' ? data : await data.text();
+    const labels = new Set<string>();
+    let count = 0;
+    let lastTs = 0;
+    for (const line of text.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const row = JSON.parse(line) as { label: string; ts: number };
+        count += 1;
+        labels.add(row.label);
+        if (row.ts > lastTs) lastTs = row.ts;
+      } catch {
+        // Skip a malformed line rather than failing the whole stats read.
+      }
+    }
+    return {
+      totalSamples: count,
+      uniqueSetCodes: labels.size,
+      lastSavedAt: lastTs ? new Date(lastTs).toISOString() : null,
+    };
+  } catch {
+    // No manifest yet -- nothing saved so far, not an error.
+    return { totalSamples: 0, uniqueSetCodes: 0, lastSavedAt: null };
+  }
+}

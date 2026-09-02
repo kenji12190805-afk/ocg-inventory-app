@@ -1,9 +1,16 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { createWorker, PSM } from 'tesseract.js';
 import { useDb } from '../DbContext';
-import { matchCardsByOcrText, matchPrintsByOcrText, type OcrCandidate, type PrintSearchResult } from '../db/datasetRepo';
+import {
+  matchCardsByOcrText,
+  matchPrintsByOcrText,
+  searchPrintsBySetCode,
+  suggestSetCodes,
+  type OcrCandidate,
+  type PrintSearchResult,
+} from '../db/datasetRepo';
 import { incrementInventory } from '../db/localRepo';
 import { saveOcrTrainingSample } from '../ocrTraining';
 
@@ -184,7 +191,55 @@ export default function CameraRegisterScreen() {
   // -- if that's slow or blocked, OCR silently hangs at "reading" with no other feedback,
   // so surface which stage it's actually in.
   const [ocrProgress, setOcrProgress] = useState<string | null>(null);
+  // Manual correction: lets the user register the right print even when OCR found
+  // nothing/the wrong thing, AND still ties the (processedPreview, confirmed set_code)
+  // pair into the training-sample pipeline -- every 型番 scan becomes useful, not just the
+  // ones OCR happened to get right.
+  const [manualCode, setManualCode] = useState('');
+  const [manualSuggestions, setManualSuggestions] = useState<string[]>([]);
+  const [showManualSuggestions, setShowManualSuggestions] = useState(false);
+  const [manualResults, setManualResults] = useState<PrintSearchResult[]>([]);
+  const [manualLoading, setManualLoading] = useState(false);
   const imgWrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'code' || status !== 'done' || !manualCode.trim()) {
+      setManualSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      suggestSetCodes(dataset, manualCode.trim()).then((s) => {
+        if (!cancelled) setManualSuggestions(s);
+      });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [dataset, mode, status, manualCode]);
+
+  useEffect(() => {
+    if (mode !== 'code' || status !== 'done' || manualCode.trim().length < 2) {
+      setManualResults([]);
+      return;
+    }
+    let cancelled = false;
+    setManualLoading(true);
+    const handle = setTimeout(() => {
+      searchPrintsBySetCode(dataset, manualCode.trim())
+        .then((r) => {
+          if (!cancelled) setManualResults(r);
+        })
+        .finally(() => {
+          if (!cancelled) setManualLoading(false);
+        });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [dataset, mode, status, manualCode]);
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -198,6 +253,8 @@ export default function CameraRegisterScreen() {
     setRegisteredPrintId(null);
     setDebugOcrText(null);
     setProcessedPreview(null);
+    setManualCode('');
+    setManualResults([]);
   }
 
   async function rotateBy(delta: 90 | -90) {
@@ -216,6 +273,8 @@ export default function CameraRegisterScreen() {
     setDebugOcrText(null);
     setProcessedPreview(null);
     setOcrProgress(null);
+    setManualCode('');
+    setManualResults([]);
     try {
       const result = await Camera.getPhoto({
         resultType: CameraResultType.DataUrl,
@@ -383,6 +442,14 @@ export default function CameraRegisterScreen() {
       const print = printCandidates.find((p) => p.print.id === printId);
       if (print) void saveOcrTrainingSample(processedPreview, print.print.set_code);
     }
+  }
+
+  async function registerManualPrint(printId: number, setCode: string) {
+    await incrementInventory(local, printId, 1);
+    setRegisteredPrintId(printId);
+    // Same training-sample capture as registerPrint, but for the manual-correction path --
+    // this is what turns an OCR *miss* into useful data instead of nothing at all.
+    if (processedPreview) void saveOcrTrainingSample(processedPreview, setCode);
   }
 
   const handleStyle: React.CSSProperties = {
@@ -559,6 +626,76 @@ export default function CameraRegisterScreen() {
                 className="primary"
                 style={{ flexShrink: 0 }}
                 onClick={() => registerPrint(print.id)}
+                disabled={registeredPrintId === print.id}
+              >
+                {registeredPrintId === print.id ? '登録済み' : '＋1登録'}
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+
+      {status === 'done' && mode === 'code' && processedPreview && (
+        <>
+          <div className="section-title">候補になければ型番を入力</div>
+          <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+            ここで確定した型番は、今撮影した画像と一緒に学習データとしても保存されます。
+          </p>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="search"
+              placeholder="型番を入力 (例: SUB1-JP001)"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              onFocus={() => setShowManualSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowManualSuggestions(false), 150)}
+              style={{ textTransform: 'uppercase', width: '100%' }}
+            />
+            {showManualSuggestions && manualSuggestions.length > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 10,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  marginTop: 4,
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }}
+              >
+                {manualSuggestions.map((code) => (
+                  <div
+                    key={code}
+                    style={{ padding: '8px 12px', fontSize: 14, cursor: 'pointer' }}
+                    onMouseDown={() => {
+                      setManualCode(code);
+                      setShowManualSuggestions(false);
+                    }}
+                  >
+                    {code}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {manualLoading && <div className="empty-state">検索中...</div>}
+          {manualResults.map(({ print, card }) => (
+            <div key={print.id} className="print-row">
+              <div className="info" style={{ cursor: 'pointer' }} onClick={() => navigate(`/card/${card.id}`)}>
+                <div className="name">{card.name_ja}</div>
+                <div className="set-code">{print.set_code}</div>
+                <div className="rarity">
+                  {print.set_name} / {print.rarity}
+                </div>
+              </div>
+              <button
+                className="primary"
+                style={{ flexShrink: 0 }}
+                onClick={() => registerManualPrint(print.id, print.set_code)}
                 disabled={registeredPrintId === print.id}
               >
                 {registeredPrintId === print.id ? '登録済み' : '＋1登録'}

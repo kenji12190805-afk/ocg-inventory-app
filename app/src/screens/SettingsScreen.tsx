@@ -4,11 +4,13 @@ import { useDb } from '../DbContext';
 import { getSyncMeta } from '../db/datasetRepo';
 import { getDatasetUrl } from '../db/sqlite';
 import { exportInventoryCsv, exportFullBackupJson, importBackupJson } from '../backup';
+import { getOcrTrainingStats, type OcrTrainingStats } from '../ocrTraining';
 import type { SyncMeta } from '../db/types';
 
 export default function SettingsScreen() {
   const { dataset, local, refreshDataset } = useDb();
   const [meta, setMeta] = useState<SyncMeta>({});
+  const [ocrStats, setOcrStats] = useState<OcrTrainingStats | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -17,6 +19,7 @@ export default function SettingsScreen() {
 
   async function reload() {
     setMeta(await getSyncMeta(dataset));
+    setOcrStats(await getOcrTrainingStats());
   }
 
   useEffect(() => {
@@ -88,6 +91,23 @@ export default function SettingsScreen() {
       <Link to="/stats">
         <button className="plain">統計を見る</button>
       </Link>
+
+      <div className="section-title">型番OCR学習状況</div>
+      <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+        カメラの型番モードで「+1登録」するたびに、読み取った画像と確定した型番のペアが端末内に自動保存されます(外部送信なし)。ある程度溜まったら、それを使ってOCRモデルを改善します。
+      </p>
+      <div className="list-row">
+        <span>保存済みサンプル数</span>
+        <span>{ocrStats ? `${ocrStats.totalSamples}件` : '-'}</span>
+      </div>
+      <div className="list-row">
+        <span>カバーしている型番の種類</span>
+        <span>{ocrStats ? `${ocrStats.uniqueSetCodes}種類` : '-'}</span>
+      </div>
+      <div className="list-row">
+        <span>最終保存</span>
+        <span>{ocrStats?.lastSavedAt ? new Date(ocrStats.lastSavedAt).toLocaleString('ja-JP') : '-'}</span>
+      </div>
 
       <div className="section-title">エクスポート/バックアップ</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
