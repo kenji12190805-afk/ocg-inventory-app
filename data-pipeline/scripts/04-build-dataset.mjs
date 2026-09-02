@@ -213,6 +213,23 @@ for (const p of resolvedPrints) {
   insertPrint.run([p.cardId, p.setCode, p.setName, p.rarity, p.releaseDate]);
 }
 insertPrint.finalize();
+
+const cardHashesPath = path.join(WORK_DIR, "card_hashes.json");
+let hashCount = 0;
+if (existsSync(cardHashesPath)) {
+  const hashes = JSON.parse(readFileSync(cardHashesPath, "utf8"));
+  const insertHash = out.prepare("INSERT OR REPLACE INTO card_hashes (card_id, dhash) VALUES (?, ?)");
+  for (const [idStr, hash] of Object.entries(hashes)) {
+    const id = Number(idStr);
+    if (!cardsById.has(id)) continue; // only hash cards that actually made it into this build
+    insertHash.run([id, hash]);
+    hashCount++;
+  }
+  insertHash.finalize();
+} else {
+  console.log(`No ${cardHashesPath} found -- skipping card_hashes (run fetch:card-hashes first if you want art matching).`);
+}
+
 out.exec("COMMIT");
 
 const builtAt = new Date().toISOString();
@@ -249,6 +266,6 @@ writeFileSync(
 );
 
 console.log(
-  `Dataset built: ${cardCount} cards (${yugipediaFallbackCount} Yugipedia-fallback), ${resolvedPrints.length} prints -> ${OUT_PATH}`,
+  `Dataset built: ${cardCount} cards (${yugipediaFallbackCount} Yugipedia-fallback), ${resolvedPrints.length} prints, ${hashCount} art hashes -> ${OUT_PATH}`,
 );
 console.log(`Meta written -> ${metaPath}`);

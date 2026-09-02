@@ -9,11 +9,13 @@
     "fetch:ja-texts": "node scripts/02-fetch-ja-texts.mjs",
     "fetch:yugipedia": "node scripts/03-fetch-yugipedia-prints.mjs",
     "fetch:yugipedia-cards": "node scripts/03b-fetch-yugipedia-cards.mjs",
+    "fetch:card-hashes": "node scripts/03c-fetch-card-hashes.mjs",
     "build": "node scripts/04-build-dataset.mjs",
     "changelog": "node scripts/05-generate-changelog.mjs",
-    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run fetch:yugipedia-cards && npm run build && npm run changelog"
+    "all": "npm run fetch:babelcdb && npm run fetch:ja-texts && npm run fetch:yugipedia && npm run fetch:yugipedia-cards && npm run fetch:card-hashes && npm run build && npm run changelog"
   },
   "dependencies": {
-    "node-sqlite3-wasm": "^0.8.60"
+    "node-sqlite3-wasm": "^0.8.60",
+    "sharp": "^0.35.4"
   }
 }

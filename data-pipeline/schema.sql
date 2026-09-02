@@ -57,8 +57,22 @@ CREATE INDEX idx_card_prints_card_id ON card_prints(card_id);
 -- the same print code) -- rarity is part of the row's identity, not incidental to it.
 CREATE UNIQUE INDEX idx_card_prints_unique ON card_prints(set_code, card_id, rarity);
 
+-- Perceptual (difference) hash of each card's official artwork thumbnail, for the
+-- camera's イラストで識別 mode: photograph a card, hash the illustration the same way
+-- client-side, and find the closest match(es) by Hamming distance -- no text OCR involved.
+-- One row per card (not per print): reprints of the same card share the same artwork and
+-- therefore the same hash, so this identifies the CARD, not the specific set/rarity (that
+-- still comes from picking among card_prints afterward, same as name-OCR mode already
+-- works). See data-pipeline/scripts/lib/dhash.mjs -- the app must compute its query hash
+-- with the exact same algorithm (9x8 greyscale difference hash) for distances to be
+-- comparable at all.
+CREATE TABLE card_hashes (
+  card_id  INTEGER PRIMARY KEY REFERENCES cards(id),
+  dhash    TEXT NOT NULL   -- 64-bit hash as 16 lowercase hex chars
+);
+
 -- Pipeline/build bookkeeping, read by the app to decide whether a newer dataset
--- is available (drives the "new set synced" notification feature).
+-- is available (drives the "新弾同期の通知" feature).
 CREATE TABLE sync_meta (
   key    TEXT PRIMARY KEY,
   value  TEXT NOT NULL

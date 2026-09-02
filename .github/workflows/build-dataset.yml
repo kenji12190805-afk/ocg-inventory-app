@@ -36,6 +36,20 @@ jobs:
       - name: Fetch Yugipedia fallback cards (for cards BabelCDB doesn't have yet)
         run: npm run fetch:yugipedia-cards
 
+      # Card artwork essentially never changes for an existing id, so caching
+      # work/card_hashes.json across runs means each week only re-fetches images for
+      # cards that were added since the last run, instead of hitting the (third-party,
+      # rate-limit-sensitive) image CDN for all ~15k cards every single week.
+      - name: Restore card art hash cache
+        uses: actions/cache@v4
+        with:
+          path: data-pipeline/work/card_hashes.json
+          key: card-hashes-${{ github.run_id }}
+          restore-keys: card-hashes-
+
+      - name: Fetch & hash card artwork (for camera イラストで識別 matching)
+        run: npm run fetch:card-hashes
+
       - name: Build dataset
         run: npm run build
 

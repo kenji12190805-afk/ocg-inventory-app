@@ -4,16 +4,19 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { createWorker, PSM } from 'tesseract.js';
 import { useDb } from '../DbContext';
 import {
+  matchCardsByArtHash,
   matchCardsByOcrText,
   matchPrintsByOcrText,
   searchCards,
   searchPrintsBySetCode,
   suggestSetCodes,
+  type ArtCandidate,
   type OcrCandidate,
   type PrintSearchResult,
 } from '../db/datasetRepo';
 import { incrementInventory } from '../db/localRepo';
 import { saveOcrTrainingSample } from '../ocrTraining';
+import { computeDHash } from '../imageHash';
 import type { Card } from '../db/types';
 
 type Status = 'idle' | 'cropping' | 'reading' | 'done' | 'error';
@@ -30,6 +33,10 @@ interface CropRect {
 }
 const NAME_DEFAULT_CROP: CropRect = { x: 0.08, y: 0.055, w: 0.68, h: 0.09 };
 const CODE_DEFAULT_CROP: CropRect = { x: 0.05, y: 0.8, w: 0.5, h: 0.12 };
+// The illustration box sits in a much more consistent spot across virtually every card
+// layout than the name/code text do, so unlike those two this isn't user-adjustable --
+// just a fixed region of the same photo, hashed automatically alongside the OCR passes.
+const ART_CROP: CropRect = { x: 0.12, y: 0.17, w: 0.76, h: 0.55 };
 const MIN_CROP_W = 0.06;
 const MIN_CROP_H = 0.02;
 
@@ -165,6 +172,10 @@ export default function CameraRegisterScreen() {
   const [status, setStatus] = useState<Status>('idle');
   const [candidates, setCandidates] = useState<OcrCandidate[]>([]);
   const [printCandidates, setPrintCandidates] = useState<PrintSearchResult[]>([]);
+  // Illustration match -- unlike name/code, this isn't OCR at all (no font/print-quality
+  // issues to fight), just a deterministic perceptual-hash comparison against every known
+  // card's official artwork, so it tends to be the most reliable of the three signals.
+  const [artCandidates, setArtCandidates] = useState<ArtCandidate[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [registeredPrintId, setRegisteredPrintId] = useState<number | null>(null);
   // What each OCR pass actually read, and the exact (cropped/cleaned) image it read it
@@ -258,6 +269,7 @@ export default function CameraRegisterScreen() {
     setError(null);
     setCandidates([]);
     setPrintCandidates([]);
+    setArtCandidates([]);
     setRegisteredPrintId(null);
     setNameDebugText(null);
     setNameProcessedPreview(null);
@@ -308,6 +320,10 @@ export default function CameraRegisterScreen() {
     if (!rotatedPhoto) return;
     setStatus('reading');
     try {
+      setOcrProgress('イラストを照合中...');
+      const artHash = await computeDHash(rotatedPhoto, ART_CROP);
+      setArtCandidates(await matchCardsByArtHash(dataset, artHash));
+
       setOcrProgress('カード名を切り出し中...');
       const nameCropped = await cropAndUpscale(rotatedPhoto, nameCrop);
       setNameProcessedPreview(nameCropped);
@@ -501,7 +517,7 @@ export default function CameraRegisterScreen() {
       <div className="section-title">カメラでカードを識別</div>
 
       <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-        カード全体を1枚撮影すると、カード名と型番を同時に認識します。それぞれの枠を文字にぴったり合わせるほど精度が上がります。
+        カード全体を1枚撮影すると、カード名・型番・イラストを同時に照合します。名前と型番の枠は文字にぴったり合わせるほど精度が上がります(イラストは自動で照合されます)。
       </p>
 
       {status !== 'cropping' && (
@@ -587,6 +603,20 @@ export default function CameraRegisterScreen() {
 
       {status === 'done' && (
         <>
+          <div className="section-title">イラスト候補 ({artCandidates.length})</div>
+          <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+            OCRではなく絵柄そのものを照合した結果です。文字が読み取れなくても、絵柄が写っていれば見つかることがあります。
+          </p>
+          {artCandidates.length === 0 && (
+            <div className="empty-state">近い絵柄が見つかりませんでした。</div>
+          )}
+          {artCandidates.map(({ card, distance }) => (
+            <div key={card.id} className="card-list-item" onClick={() => navigate(`/card/${card.id}`)}>
+              <div className="name">{card.name_ja}</div>
+              <div className="meta">一致度スコア: {distance}</div>
+            </div>
+          ))}
+
           <div className="section-title">カード名候補 ({candidates.length})</div>
           {candidates.length === 0 && (
             <div className="empty-state">

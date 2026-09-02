@@ -1,6 +1,7 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { normalizeForSearch } from './normalize';
 import { SPELL_SUBTYPE_BITS, TRAP_SUBTYPE_BITS } from '../gameConstants';
+import { hammingDistanceHex } from '../imageHash';
 import type { Card, CardPrint, SyncMeta } from './types';
 
 function rowToCard(row: any): Card {
@@ -369,6 +370,36 @@ export async function fuzzyMatchSetCode(
     if (out.length >= limit) break;
   }
   return out.slice(0, limit);
+}
+
+export interface ArtCandidate {
+  card: Card;
+  distance: number; // Hamming distance, 0..64 -- lower is a closer artwork match.
+}
+
+/** Matches a photographed card's illustration against every known card's reference
+ *  dHash (see data-pipeline/scripts/lib/dhash.mjs / app/src/imageHash.ts) by Hamming
+ *  distance. This identifies the CARD only (same as name-OCR) -- reprints of a card share
+ *  its artwork and therefore its hash, so the specific print/rarity still has to be picked
+ *  afterward from that card's card_prints, same as every other identification path here. */
+export async function matchCardsByArtHash(
+  conn: SQLiteDBConnection,
+  queryHash: string,
+  topN = 5,
+  maxDistance = 16,
+): Promise<ArtCandidate[]> {
+  const result = await conn.query('SELECT card_id, dhash FROM card_hashes');
+  const scored: { cardId: number; distance: number }[] = [];
+  for (const row of result.values ?? []) {
+    const distance = hammingDistanceHex(queryHash, row.dhash);
+    if (distance <= maxDistance) scored.push({ cardId: row.card_id, distance });
+  }
+  scored.sort((a, b) => a.distance - b.distance);
+  const top = scored.slice(0, topN);
+  const cards = await getCardsByIds(conn, top.map((t) => t.cardId));
+  return top
+    .map((t) => ({ card: cards.get(t.cardId), distance: t.distance }))
+    .filter((r): r is ArtCandidate => Boolean(r.card));
 }
 
 export async function getSyncMeta(conn: SQLiteDBConnection): Promise<SyncMeta> {
