@@ -92,16 +92,16 @@ export default function SettingsScreen() {
         <button className="plain">統計を見る</button>
       </Link>
 
-      <div className="section-title">型番OCR学習状況</div>
+      <div className="section-title">カメラOCR学習状況</div>
       <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-        カメラの型番モードで「+1登録」するたびに、読み取った画像と確定した型番のペアが端末内に自動保存されます(外部送信なし)。ある程度溜まったら、それを使ってOCRモデルを改善します。
+        カメラでカードを撮影して候補を選ぶ(またはカード名/型番を手動入力する)たびに、読み取った画像と確定した内容のペアが端末内に自動保存されます(外部送信なし)。カード名・型番どちらも対象です。ある程度溜まったら、それを使ってOCRモデルを改善します。
       </p>
       <div className="list-row">
         <span>保存済みサンプル数</span>
         <span>{ocrStats ? `${ocrStats.totalSamples}件` : '-'}</span>
       </div>
       <div className="list-row">
-        <span>カバーしている型番の種類</span>
+        <span>カバーしている種類(カード名+型番)</span>
         <span>{ocrStats ? `${ocrStats.uniqueSetCodes}種類` : '-'}</span>
       </div>
       <div className="list-row">
