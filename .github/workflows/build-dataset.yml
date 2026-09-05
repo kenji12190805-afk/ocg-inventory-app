@@ -50,6 +50,9 @@ jobs:
       - name: Fetch & hash card artwork (for camera イラストで識別 matching)
         run: npm run fetch:card-hashes
 
+      - name: Fetch overseas reference prices (YGOPRODeck, free, no API key)
+        run: npm run fetch:card-prices
+
       - name: Build dataset
         run: npm run build
 

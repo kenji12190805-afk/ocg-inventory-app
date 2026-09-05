@@ -1,5 +1,5 @@
 import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
-import type { Deck, DeckCard, InventoryRow, StorageLocation } from './types';
+import type { Deck, DeckCard, InventoryRow, PriceLogEntry, StorageLocation } from './types';
 
 export async function listStorageLocations(conn: SQLiteDBConnection): Promise<StorageLocation[]> {
   const result = await conn.query('SELECT * FROM storage_locations ORDER BY sort_order, name');
@@ -94,6 +94,44 @@ export async function setInventoryStorageLocation(
     storageLocationId,
     printId,
   ]);
+}
+
+// ---- price log (user-observed real-world JP prices, see app-local-schema.sql) ----
+
+export async function getPriceLogForPrints(
+  conn: SQLiteDBConnection,
+  printIds: number[],
+): Promise<Map<number, PriceLogEntry[]>> {
+  const map = new Map<number, PriceLogEntry[]>();
+  if (printIds.length === 0) return map;
+  const placeholders = printIds.map(() => '?').join(',');
+  const result = await conn.query(
+    `SELECT * FROM price_log WHERE print_id IN (${placeholders}) ORDER BY observed_at DESC`,
+    printIds,
+  );
+  for (const row of (result.values ?? []) as PriceLogEntry[]) {
+    const list = map.get(row.print_id) ?? [];
+    list.push(row);
+    map.set(row.print_id, list);
+  }
+  return map;
+}
+
+export async function addPriceLogEntry(
+  conn: SQLiteDBConnection,
+  printId: number,
+  priceJpy: number,
+  source: string,
+  note: string,
+): Promise<void> {
+  await conn.run(
+    'INSERT INTO price_log (print_id, price_jpy, source, note, observed_at) VALUES (?, ?, ?, ?, ?)',
+    [printId, Math.max(0, Math.round(priceJpy)), source.trim(), note.trim(), new Date().toISOString()],
+  );
+}
+
+export async function deletePriceLogEntry(conn: SQLiteDBConnection, id: number): Promise<void> {
+  await conn.run('DELETE FROM price_log WHERE id = ?', [id]);
 }
 
 // ---- decks ----

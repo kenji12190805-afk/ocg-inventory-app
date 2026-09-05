@@ -31,17 +31,33 @@ interface CropRect {
   w: number;
   h: number;
 }
+// These three are expressed as fractions of the CARD (cardCrop below), not the whole
+// photo -- a handheld photo almost never has the card filling the frame edge-to-edge, so
+// anchoring to the photo itself put every one of these badly off-target on any photo with
+// real margin around the card. Anchoring to a user-marked card boundary instead means they
+// stay correct regardless of how tightly the card fills the frame.
 const NAME_DEFAULT_CROP: CropRect = { x: 0.08, y: 0.055, w: 0.68, h: 0.09 };
 const CODE_DEFAULT_CROP: CropRect = { x: 0.05, y: 0.8, w: 0.5, h: 0.12 };
-// The illustration box sits in a much more consistent spot across virtually every card
-// layout than the name/code text do, so unlike those two this isn't user-adjustable --
-// just a fixed region of the same photo, hashed automatically alongside the OCR passes.
 const ART_CROP: CropRect = { x: 0.12, y: 0.17, w: 0.76, h: 0.55 };
+// Starting guess for the card boundary itself -- assumes the card roughly fills the frame,
+// which the user then drags/resizes to match their actual photo.
+const CARD_DEFAULT_CROP: CropRect = { x: 0.1, y: 0.05, w: 0.8, h: 0.9 };
 const MIN_CROP_W = 0.06;
 const MIN_CROP_H = 0.02;
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
+}
+
+// Expresses `rel` (a fraction of the CARD) as a fraction of the PHOTO, given where the
+// card itself sits in the photo (`base`).
+function deriveRect(base: CropRect, rel: CropRect): CropRect {
+  return {
+    x: base.x + rel.x * base.w,
+    y: base.y + rel.y * base.h,
+    w: rel.w * base.w,
+    h: rel.h * base.h,
+  };
 }
 
 // Tesseract fetches its worker script/wasm core/language data from a CDN on first use;
@@ -147,17 +163,55 @@ async function cropAndUpscale(dataUrl: string, rect: CropRect): Promise<string> 
   const sy = rect.y * img.naturalHeight;
   const sw = rect.w * img.naturalWidth;
   const sh = rect.h * img.naturalHeight;
-  const scale = Math.max(1, 1600 / sw);
+  const scale = Math.max(1, 2000 / sw);
+  const contentW = Math.round(sw * scale);
+  const contentH = Math.round(sh * scale);
+  const contentCanvas = document.createElement('canvas');
+  contentCanvas.width = contentW;
+  contentCanvas.height = contentH;
+  const contentCtx = contentCanvas.getContext('2d');
+  if (!contentCtx) throw new Error('canvas context取得に失敗しました');
+  contentCtx.imageSmoothingEnabled = true;
+  contentCtx.imageSmoothingQuality = 'high';
+  contentCtx.drawImage(img, sx, sy, sw, sh, 0, 0, contentW, contentH);
+  // Contrast-stretch needs to run on the real content alone (stretching a min/max that
+  // already includes an artificial white border would understate the true image's own
+  // near-white background and wash out contrast) -- so it happens here, on the bare crop.
+  cleanupForOcr(contentCtx, contentW, contentH);
+
+  // Tesseract reads text sitting flush against the image edge worse than the same text
+  // with a clear quiet zone around it -- strokes at the border get clipped and its layout
+  // analysis misjudges the baseline. Paste the cleaned crop onto a plain white canvas with
+  // a margin to fix that without touching the contrast math above.
+  const pad = Math.round(Math.min(contentW, contentH) * 0.15);
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(sw * scale);
-  canvas.height = Math.round(sh * scale);
+  canvas.width = contentW + pad * 2;
+  canvas.height = contentH + pad * 2;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas context取得に失敗しました');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-  cleanupForOcr(ctx, canvas.width, canvas.height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(contentCanvas, pad, pad);
   return canvas.toDataURL('image/png');
+}
+
+// Plain (no grayscale/blur) crop, just for showing the user what region was actually fed
+// to computeDHash -- there's no dedicated art crop box in the UI (it's derived from the
+// card boundary box instead), so when the match misses, seeing whether that derived region
+// actually landed on the illustration is the first thing to check.
+async function cropForPreview(dataUrl: string, rect: CropRect): Promise<string> {
+  const img = await loadImageEl(dataUrl);
+  const sx = rect.x * img.naturalWidth;
+  const sy = rect.y * img.naturalHeight;
+  const sw = rect.w * img.naturalWidth;
+  const sh = rect.h * img.naturalHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(sw);
+  canvas.height = Math.round(sh);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas context取得に失敗しました');
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 export default function CameraRegisterScreen() {
@@ -167,8 +221,12 @@ export default function CameraRegisterScreen() {
   // photo, straightened by `rotation` -- this (not `photo`) is what's displayed and cropped.
   const [rotation, setRotation] = useState<0 | 90 | 180 | 270>(0);
   const [rotatedPhoto, setRotatedPhoto] = useState<string | null>(null);
-  const [nameCrop, setNameCrop] = useState<CropRect>(NAME_DEFAULT_CROP);
-  const [codeCrop, setCodeCrop] = useState<CropRect>(CODE_DEFAULT_CROP);
+  // The card's own boundary within the photo -- the user drags this to fit the card first,
+  // and name/code/art crops are all derived from it (see the effect below) so they track
+  // wherever the card actually is instead of assuming it fills the frame.
+  const [cardCrop, setCardCrop] = useState<CropRect>(CARD_DEFAULT_CROP);
+  const [nameCrop, setNameCrop] = useState<CropRect>(deriveRect(CARD_DEFAULT_CROP, NAME_DEFAULT_CROP));
+  const [codeCrop, setCodeCrop] = useState<CropRect>(deriveRect(CARD_DEFAULT_CROP, CODE_DEFAULT_CROP));
   const [status, setStatus] = useState<Status>('idle');
   const [candidates, setCandidates] = useState<OcrCandidate[]>([]);
   const [printCandidates, setPrintCandidates] = useState<PrintSearchResult[]>([]);
@@ -176,6 +234,7 @@ export default function CameraRegisterScreen() {
   // issues to fight), just a deterministic perceptual-hash comparison against every known
   // card's official artwork, so it tends to be the most reliable of the three signals.
   const [artCandidates, setArtCandidates] = useState<ArtCandidate[]>([]);
+  const [artProcessedPreview, setArtProcessedPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [registeredPrintId, setRegisteredPrintId] = useState<number | null>(null);
   // What each OCR pass actually read, and the exact (cropped/cleaned) image it read it
@@ -265,11 +324,21 @@ export default function CameraRegisterScreen() {
     };
   }, [dataset, status, nameQuery]);
 
+  // Re-derive name/code crops any time the card boundary moves, so dragging the card box
+  // into place immediately snaps the other two into a sane position on top of it. This does
+  // mean re-adjusting the card box after manually fine-tuning name/code resets that
+  // fine-tuning -- acceptable since the card box should normally be set first.
+  useEffect(() => {
+    setNameCrop(deriveRect(cardCrop, NAME_DEFAULT_CROP));
+    setCodeCrop(deriveRect(cardCrop, CODE_DEFAULT_CROP));
+  }, [cardCrop]);
+
   function resetResults() {
     setError(null);
     setCandidates([]);
     setPrintCandidates([]);
     setArtCandidates([]);
+    setArtProcessedPreview(null);
     setRegisteredPrintId(null);
     setNameDebugText(null);
     setNameProcessedPreview(null);
@@ -286,8 +355,7 @@ export default function CameraRegisterScreen() {
     if (!photo) return;
     const next = (((rotation + delta) % 360) + 360) % 360 as 0 | 90 | 180 | 270;
     setRotation(next);
-    setNameCrop(NAME_DEFAULT_CROP);
-    setCodeCrop(CODE_DEFAULT_CROP);
+    setCardCrop(CARD_DEFAULT_CROP);
     setRotatedPhoto(await rotateImage(photo, next));
   }
 
@@ -306,8 +374,7 @@ export default function CameraRegisterScreen() {
       setPhoto(result.dataUrl);
       setRotation(0);
       setRotatedPhoto(result.dataUrl);
-      setNameCrop(NAME_DEFAULT_CROP);
-      setCodeCrop(CODE_DEFAULT_CROP);
+      setCardCrop(CARD_DEFAULT_CROP);
       setStatus('cropping');
     } catch (e) {
       // User cancelling the camera also lands here (rejected promise) -- not a real error.
@@ -321,7 +388,9 @@ export default function CameraRegisterScreen() {
     setStatus('reading');
     try {
       setOcrProgress('イラストを照合中...');
-      const artHash = await computeDHash(rotatedPhoto, ART_CROP);
+      const artRect = deriveRect(cardCrop, ART_CROP);
+      setArtProcessedPreview(await cropForPreview(rotatedPhoto, artRect));
+      const artHash = await computeDHash(rotatedPhoto, artRect);
       setArtCandidates(await matchCardsByArtHash(dataset, artHash));
 
       setOcrProgress('カード名を切り出し中...');
@@ -334,6 +403,11 @@ export default function CameraRegisterScreen() {
         'OCRエンジンの起動がタイムアウトしました(通信環境を確認してください)',
       );
       try {
+        // Same reasoning as the set-code pass below: SINGLE_LINE has zero tolerance for
+        // the slight tilt a handheld photo always has, so use SINGLE_BLOCK here too --
+        // this was previously left at Tesseract's generic default (full page segmentation),
+        // which is more work than a single title-bar line crop needs.
+        await nameWorker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK });
         const { data } = await withTimeout(nameWorker.recognize(nameCropped), 45000, '文字認識がタイムアウトしました');
         setNameDebugText(data.text);
         setCandidates(await matchCardsByOcrText(dataset, data.text));
@@ -445,19 +519,23 @@ export default function CameraRegisterScreen() {
     setRegisteredPrintId(printId);
     // The user just confirmed this print is the one in the photo -- whether or not the
     // OCR guess that surfaced it was actually correct, (processedPreview, set_code) is now
-    // a verified-correct training pair for future model fine-tuning.
-    if (codeProcessedPreview) {
-      const print = printCandidates.find((p) => p.print.id === printId);
-      if (print) void saveOcrTrainingSample(codeProcessedPreview, print.print.set_code);
-    }
+    // a verified-correct training pair for future model fine-tuning. Registering a print also
+    // conclusively settles the card's name (via the print's card), so capture that pairing
+    // too even if the user never went through goToCard on this scan.
+    const print = printCandidates.find((p) => p.print.id === printId);
+    if (codeProcessedPreview && print) void saveOcrTrainingSample(codeProcessedPreview, print.print.set_code);
+    if (nameProcessedPreview && print) void saveOcrTrainingSample(nameProcessedPreview, print.card.name_ja);
   }
 
   async function registerManualPrint(printId: number, setCode: string) {
     await incrementInventory(local, printId, 1);
     setRegisteredPrintId(printId);
     // Same training-sample capture as registerPrint, but for the manual-correction path --
-    // this is what turns an OCR *miss* into useful data instead of nothing at all.
+    // this is what turns an OCR *miss* into useful data instead of nothing at all. Same
+    // name-side capture too, using the card this manually-entered print resolved to.
     if (codeProcessedPreview) void saveOcrTrainingSample(codeProcessedPreview, setCode);
+    const print = manualResults.find((p) => p.print.id === printId);
+    if (nameProcessedPreview && print) void saveOcrTrainingSample(nameProcessedPreview, print.card.name_ja);
   }
 
   const handleStyle: React.CSSProperties = {
@@ -517,7 +595,7 @@ export default function CameraRegisterScreen() {
       <div className="section-title">カメラでカードを識別</div>
 
       <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-        カード全体を1枚撮影すると、カード名・型番・イラストを同時に照合します。名前と型番の枠は文字にぴったり合わせるほど精度が上がります(イラストは自動で照合されます)。
+        カード全体を1枚撮影すると、カード名・型番・イラストを同時に照合します。撮影後、まずカードの端に枠を合わせるとその他の枠が自動でついてきます。
       </p>
 
       {status !== 'cropping' && (
@@ -537,7 +615,9 @@ export default function CameraRegisterScreen() {
       {photo && rotatedPhoto && status === 'cropping' && (
         <>
           <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-            カードが横向き・逆さまに写っている場合は、まず回転ボタンで直してください。そのあと紫の枠をカード名に、オレンジの枠を型番にそれぞれ合わせてください(ドラッグで移動、丸で拡大縮小)。
+            カードが横向き・逆さまに写っている場合は、まず回転ボタンで直してください。そのあと緑の枠をカードの端(4辺)にぴったり合わせてください
+            -- カード名・型番・イラストの枠はこの緑枠を基準に自動で追従します。まだズレる場合は紫(カード名)・オレンジ(型番)の枠を個別に調整してください
+            (ドラッグで移動、丸で拡大縮小)。
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <button type="button" className="plain" style={{ flex: 1 }} onClick={() => rotateBy(-90)}>
@@ -549,6 +629,7 @@ export default function CameraRegisterScreen() {
           </div>
           <div ref={imgWrapRef} style={{ position: 'relative', width: '100%', marginTop: 20, lineHeight: 0 }}>
             <img src={rotatedPhoto} alt="撮影したカード" style={{ width: '100%', borderRadius: 10, display: 'block' }} />
+            {cropBox(cardCrop, setCardCrop, '#3ec26f', 'カード全体')}
             {cropBox(nameCrop, setNameCrop, 'var(--accent)', 'カード名')}
             {cropBox(codeCrop, setCodeCrop, '#e08a2e', '型番')}
           </div>
@@ -606,7 +687,19 @@ export default function CameraRegisterScreen() {
           <div className="section-title">イラスト候補 ({artCandidates.length})</div>
           <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
             OCRではなく絵柄そのものを照合した結果です。文字が読み取れなくても、絵柄が写っていれば見つかることがあります。
+            スコアは差分が小さいほど近い一致(0が完全一致)です。写真の写り方次第でスコアが大きめでも正解のことがあるので、
+            上位候補は一応目で確認してみてください。
           </p>
+          {artProcessedPreview && (
+            <>
+              <div style={{ marginTop: 6 }}>実際に照合に使った画像(イラスト部分の切り出し):</div>
+              <img
+                src={artProcessedPreview}
+                alt="照合に使ったイラスト画像"
+                style={{ width: '100%', marginTop: 4, borderRadius: 6, background: '#000' }}
+              />
+            </>
+          )}
           {artCandidates.length === 0 && (
             <div className="empty-state">近い絵柄が見つかりませんでした。</div>
           )}

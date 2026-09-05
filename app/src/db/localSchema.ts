@@ -30,4 +30,15 @@ CREATE TABLE IF NOT EXISTS deck_cards (
   quantity   INTEGER NOT NULL DEFAULT 1 CHECK (quantity BETWEEN 1 AND 3),
   PRIMARY KEY (deck_id, card_id)
 );
+
+CREATE TABLE IF NOT EXISTS price_log (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  print_id      INTEGER NOT NULL,
+  price_jpy     INTEGER NOT NULL CHECK (price_jpy >= 0),
+  source        TEXT NOT NULL DEFAULT '',
+  note          TEXT NOT NULL DEFAULT '',
+  observed_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_price_log_print_id ON price_log(print_id);
 `;

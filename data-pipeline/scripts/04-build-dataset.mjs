@@ -230,6 +230,27 @@ if (existsSync(cardHashesPath)) {
   console.log(`No ${cardHashesPath} found -- skipping card_hashes (run fetch:card-hashes first if you want art matching).`);
 }
 
+const cardPricesPath = path.join(WORK_DIR, "card_prices.json");
+let priceCount = 0;
+if (existsSync(cardPricesPath)) {
+  const prices = JSON.parse(readFileSync(cardPricesPath, "utf8"));
+  const fetchedAt = new Date().toISOString();
+  const insertPrice = out.prepare(
+    `INSERT OR REPLACE INTO card_prices
+       (card_id, cardmarket_eur, tcgplayer_usd, ebay_usd, amazon_usd, coolstuffinc_usd, fetched_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  for (const [idStr, p] of Object.entries(prices)) {
+    const id = Number(idStr);
+    if (!cardsById.has(id)) continue; // only price cards that actually made it into this build
+    insertPrice.run([id, p.cardmarket_eur, p.tcgplayer_usd, p.ebay_usd, p.amazon_usd, p.coolstuffinc_usd, fetchedAt]);
+    priceCount++;
+  }
+  insertPrice.finalize();
+} else {
+  console.log(`No ${cardPricesPath} found -- skipping card_prices (run fetch:card-prices first if you want reference prices).`);
+}
+
 out.exec("COMMIT");
 
 const builtAt = new Date().toISOString();
@@ -266,6 +287,6 @@ writeFileSync(
 );
 
 console.log(
-  `Dataset built: ${cardCount} cards (${yugipediaFallbackCount} Yugipedia-fallback), ${resolvedPrints.length} prints, ${hashCount} art hashes -> ${OUT_PATH}`,
+  `Dataset built: ${cardCount} cards (${yugipediaFallbackCount} Yugipedia-fallback), ${resolvedPrints.length} prints, ${hashCount} art hashes, ${priceCount} reference prices -> ${OUT_PATH}`,
 );
 console.log(`Meta written -> ${metaPath}`);

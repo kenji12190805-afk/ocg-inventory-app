@@ -53,6 +53,27 @@ export interface DeckCard {
   quantity: number;
 }
 
+// Overseas (English TCG) reference price -- see schema.sql's card_prices comment for why
+// this is not the Japanese OCG market price.
+export interface CardPrice {
+  card_id: number;
+  cardmarket_eur: number | null;
+  tcgplayer_usd: number | null;
+  ebay_usd: number | null;
+  amazon_usd: number | null;
+  coolstuffinc_usd: number | null;
+  fetched_at: string;
+}
+
+export interface PriceLogEntry {
+  id: number;
+  print_id: number;
+  price_jpy: number;
+  source: string;
+  note: string;
+  observed_at: string;
+}
+
 export interface SyncMeta {
   dataset_version?: string;
   built_at?: string;

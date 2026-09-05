@@ -48,3 +48,20 @@ CREATE TABLE IF NOT EXISTS deck_cards (
   quantity   INTEGER NOT NULL DEFAULT 1 CHECK (quantity BETWEEN 1 AND 3),
   PRIMARY KEY (deck_id, card_id)
 );
+
+-- User-entered real-world price sightings (Mercari, 駿河屋, ヤフオク, a shop, ...) for a
+-- specific print (set+rarity), since JP secondhand price varies a lot by rarity/print and
+-- there is no free/official API for the actual JP market (see schema.sql's card_prices
+-- comment) -- this is how the app gets a real price trend at all: the user logs what they
+-- actually saw, one entry at a time. print_id references the synced dataset's
+-- card_prints.id, same as inventory.
+CREATE TABLE IF NOT EXISTS price_log (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  print_id      INTEGER NOT NULL,
+  price_jpy     INTEGER NOT NULL CHECK (price_jpy >= 0),
+  source        TEXT NOT NULL DEFAULT '',
+  note          TEXT NOT NULL DEFAULT '',
+  observed_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_price_log_print_id ON price_log(print_id);

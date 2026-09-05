@@ -71,6 +71,23 @@ CREATE TABLE card_hashes (
   dhash    TEXT NOT NULL   -- 64-bit hash as 16 lowercase hex chars
 );
 
+-- Overseas (English TCG) reference prices, from YGOPRODeck's free public API. This is NOT
+-- the Japanese OCG secondhand market -- print runs, ban lists, and rarity structures differ
+-- enough between regions that the two markets regularly diverge, sometimes a lot. Shown in
+-- the app as a clearly-labeled "参考価格" only; real JP prices come from the user's own
+-- manually-logged price_log entries (see app-local-schema.sql), not from here. One row per
+-- card (not per print) -- the source API itself only reports "lowest price across versions",
+-- not a per-print breakdown.
+CREATE TABLE card_prices (
+  card_id           INTEGER PRIMARY KEY REFERENCES cards(id),
+  cardmarket_eur    REAL,   -- Cardmarket (EU), euros
+  tcgplayer_usd     REAL,   -- TCGplayer (US), dollars
+  ebay_usd          REAL,
+  amazon_usd        REAL,
+  coolstuffinc_usd  REAL,
+  fetched_at        TEXT NOT NULL
+);
+
 -- Pipeline/build bookkeeping, read by the app to decide whether a newer dataset
 -- is available (drives the "新弾同期の通知" feature).
 CREATE TABLE sync_meta (

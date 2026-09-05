@@ -30,7 +30,11 @@ export async function saveOcrTrainingSample(imageDataUrl: string, setCode: strin
     await ensureDir();
     const base64 = imageDataUrl.slice(imageDataUrl.indexOf(',') + 1);
     const ts = Date.now();
-    const safeCode = setCode.replace(/[^A-Za-z0-9-]/g, '_');
+    // Only strip characters that are actually unsafe in a filename -- the original
+    // [^A-Za-z0-9-] version was written with set codes ("DTC2-JP026") in mind and reduced
+    // every Japanese card name to a string of underscores, since this same function now
+    // also saves (name-crop image, card name) pairs.
+    const safeCode = setCode.replace(/[\\/:*?"<>|\s]/g, '_').slice(0, 60);
     const imagePath = `${SAMPLES_DIR}/${ts}_${safeCode}.png`;
     await Filesystem.writeFile({ path: imagePath, data: base64, directory: Directory.Data });
     const line = `${JSON.stringify({ file: imagePath.slice(SAMPLES_DIR.length + 1), label: setCode, ts })}\n`;

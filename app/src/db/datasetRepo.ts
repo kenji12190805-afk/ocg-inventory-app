@@ -2,7 +2,7 @@ import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { normalizeForSearch } from './normalize';
 import { SPELL_SUBTYPE_BITS, TRAP_SUBTYPE_BITS } from '../gameConstants';
 import { hammingDistanceHex } from '../imageHash';
-import type { Card, CardPrint, SyncMeta } from './types';
+import type { Card, CardPrice, CardPrint, SyncMeta } from './types';
 
 function rowToCard(row: any): Card {
   return {
@@ -98,6 +98,20 @@ export async function getPrintsForCard(
   return (result.values ?? []) as CardPrint[];
 }
 
+/** Overseas (TCG) reference price for a card, if the dataset has one -- null for cards
+ *  YGOPRODeck doesn't carry (OCG-only prints), that simply have no listed price yet, or
+ *  (best-effort try/catch) a dataset synced before this table existed at all -- the app
+ *  shouldn't crash the whole card detail screen just because the cached dataset predates
+ *  this feature; it'll show reference prices again next time it re-syncs. */
+export async function getCardPrice(conn: SQLiteDBConnection, cardId: number): Promise<CardPrice | null> {
+  try {
+    const result = await conn.query('SELECT * FROM card_prices WHERE card_id = ?', [cardId]);
+    return (result.values?.[0] as CardPrice) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getPrint(conn: SQLiteDBConnection, printId: number): Promise<CardPrint | null> {
   const result = await conn.query('SELECT * FROM card_prints WHERE id = ?', [printId]);
   return (result.values?.[0] as CardPrint) ?? null;
@@ -180,7 +194,14 @@ export async function matchCardsByOcrText(
   ocrText: string,
   topN = 5,
 ): Promise<OcrCandidate[]> {
-  const haystack = normalizeForSearch(ocrText).slice(0, 500);
+  // Tesseract's Japanese model frequently inserts a space between every single glyph it
+  // isolates as its own "word" (e.g. reading "救の合縁" as "救 の 合 縁") -- real card names
+  // never have inter-character spaces, so that gap alone was enough to break the LCS
+  // contiguous-match below into single-character fragments, even when every individual
+  // character was read correctly. Stripping whitespace from the OCR side only (never from
+  // the dataset's own normalized names, which do use real spaces in the rare cases that
+  // matter) restores the actual multi-character run this is supposed to find.
+  const haystack = normalizeForSearch(ocrText).replace(/\s+/g, '').slice(0, 500);
   if (!haystack) return [];
   const result = await conn.query('SELECT id, name_ja, name_ja_normalized FROM cards');
   const scored: OcrCandidate[] = [];
@@ -386,13 +407,16 @@ export async function matchCardsByArtHash(
   conn: SQLiteDBConnection,
   queryHash: string,
   topN = 5,
-  maxDistance = 16,
 ): Promise<ArtCandidate[]> {
+  // No distance cutoff here (unlike the OCR text matchers, which at least got a clean crop
+  // of real text) -- a handheld photo's lighting/angle/framing can easily push even the
+  // correct card's distance well past what would be a "good" match for two clean reference
+  // images. Always surface the closest topN with their score and let the user's eyes make
+  // the call, same as the OCR candidate lists never gate on confidence either.
   const result = await conn.query('SELECT card_id, dhash FROM card_hashes');
   const scored: { cardId: number; distance: number }[] = [];
   for (const row of result.values ?? []) {
-    const distance = hammingDistanceHex(queryHash, row.dhash);
-    if (distance <= maxDistance) scored.push({ cardId: row.card_id, distance });
+    scored.push({ cardId: row.card_id, distance: hammingDistanceHex(queryHash, row.dhash) });
   }
   scored.sort((a, b) => a.distance - b.distance);
   const top = scored.slice(0, topN);
