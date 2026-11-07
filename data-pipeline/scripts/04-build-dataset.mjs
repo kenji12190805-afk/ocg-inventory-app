@@ -9,6 +9,7 @@ import path from "node:path";
 import pkg from "node-sqlite3-wasm";
 import { normalizeForSearch } from "./lib/normalize.mjs";
 import { normalizeEnglishName } from "./lib/name-matching.mjs";
+import { loadPreviousPrintIds, printKey } from "./lib/print-ids.mjs";
 
 const { Database } = pkg;
 
@@ -206,13 +207,41 @@ for (const card of cardsById.values()) {
 }
 insertCard.finalize();
 
-const insertPrint = out.prepare(
-  "INSERT OR IGNORE INTO card_prints (card_id, set_code, set_name, rarity, release_date) VALUES (?, ?, ?, ?, ?)",
+// card_prints.id must be STABLE across builds: the app's inventory/price_log rows reference
+// it. Prints we already knew keep the id they had in the currently-live dataset; only
+// genuinely new prints get fresh ids, above a persisted high-water mark. See
+// lib/print-ids.mjs for the incident this prevents.
+const previousIds = await loadPreviousPrintIds(WORK_DIR);
+console.log(
+  `Stable print ids: carrying over ${previousIds.idByKey.size} ids (high water ${previousIds.highWater}) from ${previousIds.source}`,
 );
+const insertPrint = out.prepare(
+  "INSERT INTO card_prints (id, card_id, set_code, set_name, rarity, release_date) VALUES (?, ?, ?, ?, ?, ?)",
+);
+let nextPrintId = previousIds.highWater + 1;
+let keptPrintIds = 0;
+let newPrintIds = 0;
+const seenPrintKeys = new Set();
 for (const p of resolvedPrints) {
-  insertPrint.run([p.cardId, p.setCode, p.setName, p.rarity, p.releaseDate]);
+  const key = printKey(p.setCode, p.cardId, p.rarity);
+  if (seenPrintKeys.has(key)) continue; // same (set_code, card_id, rarity) twice -> keep the first, like the old INSERT OR IGNORE
+  seenPrintKeys.add(key);
+  let id = previousIds.idByKey.get(key);
+  if (id === undefined) {
+    id = nextPrintId++;
+    newPrintIds++;
+  } else {
+    keptPrintIds++;
+  }
+  insertPrint.run([id, p.cardId, p.setCode, p.setName, p.rarity, p.releaseDate]);
 }
 insertPrint.finalize();
+const printIdHighWater = nextPrintId - 1;
+let droppedPrintIds = 0;
+for (const k of previousIds.idByKey.keys()) if (!seenPrintKeys.has(k)) droppedPrintIds++;
+console.log(
+  `Print ids: ${keptPrintIds} kept, ${newPrintIds} new, ${droppedPrintIds} no longer present (ids stay reserved, never reused)`,
+);
 
 const cardHashesPath = path.join(WORK_DIR, "card_hashes.json");
 let hashCount = 0;
@@ -267,6 +296,7 @@ insertMeta.run(["built_at", builtAt]);
 insertMeta.run(["babelcdb_commit", babelCommit]);
 insertMeta.run(["ja_source_commit", jaCommit]);
 insertMeta.run(["yugipedia_fetched_at", builtAt]);
+insertMeta.run(["print_id_high_water", String(printIdHighWater)]);
 insertMeta.finalize();
 
 out.close();

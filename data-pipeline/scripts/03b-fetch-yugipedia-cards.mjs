@@ -26,6 +26,7 @@ import {
   TRAP_PROPERTY_BITS,
   LINK_ARROW_BITS,
 } from "./lib/yugipedia-card-mapping.mjs";
+import { getJsonWithRetry } from "./lib/http.mjs";
 
 const { Database } = pkg;
 
@@ -45,9 +46,7 @@ function sleep(ms) {
 async function apiGet(params) {
   const url = new URL(API);
   for (const [k, v] of Object.entries({ format: "json", ...params })) url.searchParams.set(k, v);
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`Yugipedia API HTTP ${res.status} for ${url}`);
-  return res.json();
+  return getJsonWithRetry(url, { headers: { "User-Agent": USER_AGENT } });
 }
 
 function chunk(arr, size) {

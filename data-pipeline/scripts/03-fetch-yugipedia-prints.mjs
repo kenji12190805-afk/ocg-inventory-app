@@ -13,6 +13,7 @@
 // blocking the first working pipeline. card_prints.release_date is nullable for this reason.
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { getJsonWithRetry } from "./lib/http.mjs";
 
 const WORK_DIR = path.join(process.cwd(), "work");
 const OUT_PATH = path.join(WORK_DIR, "prints.json");
@@ -31,9 +32,7 @@ function sleep(ms) {
 async function apiGet(params) {
   const url = new URL(API);
   for (const [k, v] of Object.entries({ format: "json", ...params })) url.searchParams.set(k, v);
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`Yugipedia API HTTP ${res.status} for ${url}`);
-  return res.json();
+  return getJsonWithRetry(url, { headers: { "User-Agent": USER_AGENT } });
 }
 
 async function fetchAllSetListTitles() {

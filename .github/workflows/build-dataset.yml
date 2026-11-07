@@ -47,10 +47,14 @@ jobs:
           key: card-hashes-${{ github.run_id }}
           restore-keys: card-hashes-
 
+      # Optional extras: build.mjs skips them if their output is missing, so a flaky third-party
+      # CDN/API must never stop the actual card data (and new sets) from being published.
       - name: Fetch & hash card artwork (for camera イラストで識別 matching)
+        continue-on-error: true
         run: npm run fetch:card-hashes
 
       - name: Fetch overseas reference prices (YGOPRODeck, free, no API key)
+        continue-on-error: true
         run: npm run fetch:card-prices
 
       - name: Build dataset
