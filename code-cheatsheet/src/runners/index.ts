@@ -62,7 +62,10 @@ export function preloadPython(): Promise<void> {
       }
     };
     w.onerror = (e) => reject(new Error(e.message));
-    w.postMessage({ type: 'init', indexURL: new URL('pyodide/', document.baseURI).href });
+    const indexURL = new URL('pyodide/', document.baseURI).href;
+    // 公開ページなど .zip を置けない場所用: 標準ライブラリのファイル名を差し替えられる
+    const stdName = import.meta.env.VITE_PY_STDLIB as string | undefined;
+    w.postMessage({ type: 'init', indexURL, stdLibURL: stdName ? indexURL + stdName : undefined });
   });
   pyReady.catch(() => resetPython());
   return pyReady;

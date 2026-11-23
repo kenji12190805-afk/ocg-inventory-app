@@ -401,9 +401,17 @@ function render() {
 window.addEventListener('hashchange', render);
 render();
 
-registerSW({
-  immediate: true,
-  onOfflineReady() {
-    toast('オフラインでも使える準備ができたよ');
-  },
-});
+// Service Worker が使えない環境(埋め込み表示など)でも、画面はそのまま動かす
+try {
+  registerSW({
+    immediate: true,
+    onOfflineReady() {
+      toast('オフラインでも使える準備ができたよ');
+    },
+    onRegisterError() {
+      /* オフライン保存なしで動く */
+    },
+  });
+} catch {
+  /* オフライン保存なしで動く */
+}
