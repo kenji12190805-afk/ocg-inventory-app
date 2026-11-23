@@ -202,6 +202,26 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
       h('button', { class: 'btn small', onpointerdown: (ev: Event) => ev.preventDefault(), onclick: () => editor.insertEntry(e) }, 'この例をカーソルの位置に入れる'),
     );
   }
+  // 行の下に意味(コメント風)を出すか。オン/オフは覚えておく
+  let explainOn = store.get('explain') !== '0';
+  const explainBtn = h('button', {
+    class: 'btn small toggle',
+    'aria-pressed': String(explainOn),
+    onclick: () => {
+      explainOn = !explainOn;
+      store.set('explain', explainOn ? '1' : '0');
+      explainBtn.setAttribute('aria-pressed', String(explainOn));
+      editor.setExplain(explainOn);
+    },
+  }, '💬 行の下に意味を出す');
+  const bakeBtn = h('button', {
+    class: 'btn small',
+    onclick: () => {
+      const n = editor.insertComments();
+      toast(n ? `${n}行ぶん、コメントとして書き込んだよ(↶ 戻すで取り消せる)` : '書き込める意味がなかったよ(すでに書き込み済みかも)');
+    },
+  }, '📝 コメントとして書き込む');
+  const toolRow = h('div', { class: 'toolrow' }, explainBtn, bakeBtn);
   const keep = (ev: Event) => ev.preventDefault(); // ボタンを押しても、エディタからキーボードが消えないようにする
   const indentText = lang === 'javascript' ? '  ' : '    ';
   const keyBar = h(
@@ -209,6 +229,7 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
     { class: 'keybar', role: 'toolbar', 'aria-label': '入力バー' },
     h('button', { class: 'key main', onpointerdown: keep, onclick: () => editor.showSuggestions() }, '💡 候補'),
     h('button', { class: 'key main', onpointerdown: keep, onclick: () => editor.nextField() }, '⇥ 次の穴'),
+    h('button', { class: 'key', onpointerdown: keep, onclick: () => editor.undo() }, '↶ 戻す'),
     h('button', { class: 'key', onpointerdown: keep, onclick: () => editor.insert(indentText) }, '字下げ'),
     ...KEYS[lang].map((k) => h('button', { class: 'key', onpointerdown: keep, onclick: () => editor.insert(k.text, k.back ?? 0) }, k.label)),
   );
@@ -221,7 +242,7 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
       store.set(draftKey, editor.getText()); // 書いたものは自動で残る
       updatePreview();
     },
-    { onWord: showMeaning },
+    { onWord: showMeaning, explain: explainOn },
   );
   showMeaning(null);
   onDispose(() => editor.destroy());
@@ -255,7 +276,7 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
         { class: 'tabs', role: 'tablist' },
         ...LANG_ORDER.map((l) => h('button', { class: `tab lang-${l}`, role: 'tab', 'aria-selected': String(l === lang), onclick: () => go(`#/edit?l=${l}`, true) }, LANG_LABEL[l])),
       ),
-      h('section', { class: 'panel', style: 'margin-top:12px' }, h('div', { class: 'panel-h' }, h('span', null, EXT[lang]), h('button', { class: 'btn small', onclick: () => (editor.setText(STARTER[lang])) }, 'ひな形を入れる')), editorHost, keyBar, h('div', { class: 'actions' }, runBtn, checkBtn, clearBtn)),
+      h('section', { class: 'panel', style: 'margin-top:12px' }, h('div', { class: 'panel-h' }, h('span', null, EXT[lang]), h('button', { class: 'btn small', onclick: () => (editor.setText(STARTER[lang])) }, 'ひな形を入れる')), editorHost, keyBar, toolRow, h('div', { class: 'actions' }, runBtn, checkBtn, clearBtn)),
       h('section', { class: 'panel meaning' }, h('div', { class: 'panel-h' }, h('span', null, '💡 意味と候補')), meaningHost),
       lang === 'kotlin' ? h('div', { class: 'callout warn' }, 'Kotlin は、ネットにつないで公式の Kotlin Playground で実行するよ。') : null,
       lang === 'c' ? h('div', { class: 'callout warn' }, 'C は、スマホの中の小さな C エンジン(picoc)で動かすよ。エラーの文章は gcc とちがうことがあるよ。') : null,

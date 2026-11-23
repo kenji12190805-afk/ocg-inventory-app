@@ -251,3 +251,8 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
 .cm-assist-info { max-width: 320px; padding: 4px 2px; font-family: inherit; }
 .cm-assist-m { font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
 .cm-assist-info pre { margin: 0; padding: 6px 8px; font-family: var(--mono); font-size: 12px; background: var(--code-bg); border-radius: 8px; white-space: pre-wrap; overflow: auto; max-height: 160px; color: var(--code-fg); }
+
+/* ---- 行の下の「意味」(コメント風) ---- */
+.cm-explain { color: var(--syn-comment); font-style: italic; font-size: 14px; line-height: 1.5; padding-top: 0; padding-bottom: 2px; white-space: pre-wrap; word-break: break-word; user-select: none; }
+.toolrow { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--border); }
+.btn.toggle[aria-pressed='true'] { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 700; }

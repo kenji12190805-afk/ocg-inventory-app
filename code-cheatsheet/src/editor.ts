@@ -1,6 +1,6 @@
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, hoverTooltip, Decoration, type DecorationSet } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, hoverTooltip, Decoration, WidgetType, type DecorationSet } from '@codemirror/view';
+import { defaultKeymap, history, historyKeymap, indentWithTab, undo } from '@codemirror/commands';
 import { HighlightStyle, StreamLanguage, bracketMatching, indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { autocompletion, completionKeymap, nextSnippetField, snippet, startCompletion, type Completion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete';
 import { tags as t } from '@lezer/highlight';
@@ -10,6 +10,7 @@ import { cpp } from '@codemirror/lang-cpp';
 import { kotlin } from '@codemirror/legacy-modes/mode/clike';
 import type { Lang } from './runners/types';
 import { suggest, lookupWord, expandDefault, shortMeaning, type Entry } from './dict/index.ts';
+import { explainLine, COMMENT_PREFIX } from './explain.ts';
 
 const langExt = (lang: Lang): Extension => {
   switch (lang) {
@@ -62,6 +63,60 @@ const errorLineField = StateField.define<DecorationSet>({
   },
   provide: (f) => EditorView.decorations.from(f),
 });
+
+// ---------- 行の下に「意味」をコメントのように出す ----------
+
+const setExplainOn = StateEffect.define<boolean>();
+
+class ExplainWidget extends WidgetType {
+  constructor(
+    readonly text: string,
+    readonly indent: number,
+  ) {
+    super();
+  }
+  eq(o: ExplainWidget) {
+    return o.text === this.text && o.indent === this.indent;
+  }
+  toDOM() {
+    const d = document.createElement('div');
+    d.className = 'cm-explain';
+    d.style.paddingLeft = `${this.indent}ch`;
+    d.textContent = this.text;
+    return d;
+  }
+  ignoreEvent() {
+    return true;
+  }
+}
+
+function buildExplain(state: EditorState, lang: Lang): DecorationSet {
+  const ranges = [];
+  for (let n = 1; n <= state.doc.lines; n++) {
+    const line = state.doc.line(n);
+    const text = explainLine(lang, line.text);
+    if (!text) continue;
+    const comment = COMMENT_PREFIX[lang] + text;
+    // すでに同じコメントが下に書き込まれている行は、重ねて出さない
+    if (n < state.doc.lines && state.doc.line(n + 1).text.trim() === comment) continue;
+    const indent = /^\s*/.exec(line.text)![0].length;
+    ranges.push(Decoration.widget({ widget: new ExplainWidget(comment, indent), block: true, side: 1 }).range(line.to));
+  }
+  return Decoration.set(ranges);
+}
+
+const explainField = (lang: Lang, initial: boolean) =>
+  StateField.define<{ on: boolean; deco: DecorationSet }>({
+    create: (state) => ({ on: initial, deco: initial ? buildExplain(state, lang) : Decoration.none }),
+    update(v, tr) {
+      let on = v.on;
+      for (const e of tr.effects) if (e.is(setExplainOn)) on = e.value;
+      if (!on) return on === v.on ? v : { on, deco: Decoration.none };
+      if (tr.docChanged || on !== v.on) return { on, deco: buildExplain(tr.state, lang) };
+      return v;
+    },
+    provide: (f) => EditorView.decorations.from(f, (v) => v.deco),
+  });
 
 // ---------- 候補と意味(入力の手助け) ----------
 
@@ -118,6 +173,8 @@ export interface WordInfo {
 export interface AssistOptions {
   /** カーソルの位置の言葉が変わるたびに呼ばれる */
   onWord?: (info: WordInfo | null) => void;
+  /** 行の下に意味(コメント風)を出すか。あとから setExplain で切り替えられる */
+  explain?: boolean;
 }
 
 export interface Editor {
@@ -134,6 +191,12 @@ export interface Editor {
   nextField(): void;
   /** 候補を出す(何も打ってなくても、よく使うものを出す) */
   showSuggestions(): void;
+  /** 行の下に意味を出す/消す(コードは変わらない) */
+  setExplain(on: boolean): void;
+  /** 意味を、本物のコメントとしてコードに書き込む。書き込んだ行数を返す */
+  insertComments(): number;
+  /** 1つ前に戻す */
+  undo(): void;
   destroy(): void;
 }
 
@@ -180,6 +243,7 @@ export function createEditor(parent: HTMLElement, text: string, lang: Lang, onCh
         drawSelection(),
         highlightActiveLine(),
         errorLineField,
+        ...(assist ? [explainField(lang, assist.explain ?? false)] : []),
         bracketMatching(),
         indentUnit.of(lang === 'javascript' ? '  ' : '    '),
         ...assistExt,
@@ -218,6 +282,29 @@ export function createEditor(parent: HTMLElement, text: string, lang: Lang, onCh
     showSuggestions: () => {
       view.focus();
       startCompletion(view);
+    },
+    setExplain: (on) => view.dispatch({ effects: setExplainOn.of(on) }),
+    insertComments: () => {
+      const doc = view.state.doc;
+      const prefix = COMMENT_PREFIX[lang];
+      const changes: { from: number; insert: string }[] = [];
+      for (let n = 1; n <= doc.lines; n++) {
+        const line = doc.line(n);
+        const text = explainLine(lang, line.text);
+        if (!text) continue;
+        const comment = prefix + text;
+        // すでに同じコメントが下にあるときは、重ねて入れない
+        if (n < doc.lines && doc.line(n + 1).text.trim() === comment) continue;
+        const indent = /^\s*/.exec(line.text)![0];
+        changes.push({ from: line.to, insert: `\n${indent}${comment}` });
+      }
+      if (changes.length) view.dispatch({ changes });
+      view.focus();
+      return changes.length;
+    },
+    undo: () => {
+      undo(view);
+      view.focus();
     },
     destroy: () => view.destroy(),
   };
