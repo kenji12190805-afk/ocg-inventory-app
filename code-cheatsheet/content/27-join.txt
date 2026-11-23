@@ -1,0 +1,63 @@
+=== meta
+{"id":"join","category":"基本","title":"リストを1つの文字列にする・余白を消す・くりかえす (join / trim / repeat)","summary":"[\"apple\",\"banana\",\"cherry\"] を「apple, banana, cherry」にする。前後の空白を消す。同じ文字をくりかえす。","keywords":["join","結合","連結","trim","strip","余白","空白","前後","repeat","くりかえす","区切り","カンマ","リスト","配列","文字列"],
+"notes":{"python":"区切り文字.join(リスト) の順番に注意(リスト.join ではない)。前後の空白は strip()。\"ab\" * 3 でくりかえし。","javascript":"リスト.join(区切り)。前後の空白は trim()。repeat(3) でくりかえし。","c":"C には join も trim もない。ループで、区切りを自分で出す。","kotlin":"リスト.joinToString(区切り)。前後の空白は trim()。repeat(3) でくりかえし。"},
+"why":{"python":"join は「リスト」のメソッドではなく「区切り文字(文字列)」のメソッド。\", \".join(words) と書く。","javascript":"JavaScript の文字列に strip() はない。trim() を使う。","c":"C の配列にメソッド(.join)はない。ループで書く。","kotlin":"リストに join はない。joinToString を使う。"}}
+=== python
+words = ["apple", "banana", "cherry"]
+print(", ".join(words))
+print("  hello  ".strip())
+print("ab" * 3)
+=== python.bug
+words = ["apple", "banana", "cherry"]
+print(words.join(", "))
+=== javascript
+const words = ["apple", "banana", "cherry"];
+console.log(words.join(", "));
+console.log("  hello  ".trim());
+console.log("ab".repeat(3));
+=== javascript.bug
+console.log("  hello  ".strip());
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char *words[] = {"apple", "banana", "cherry"};
+    for (int i = 0; i < 3; i++) {
+        if (i > 0) {
+            printf(", ");
+        }
+        printf("%s", words[i]);
+    }
+    printf("\n");
+    for (int i = 0; i < 3; i++) {
+        printf("ab");
+    }
+    printf("\n");
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char *words[] = {"apple", "banana", "cherry"};
+    printf("%s\n", words.join(", "));
+    return 0;
+}
+=== kotlin
+fun main() {
+    val words = listOf("apple", "banana", "cherry")
+    println(words.joinToString(", "))
+    println("  hello  ".trim())
+    println("ab".repeat(3))
+}
+=== kotlin.bug
+fun main() {
+    val words = listOf("apple", "banana", "cherry")
+    println(words.join(", "))
+}
+=== kotlin.out
+apple, banana, cherry
+hello
+ababab
+=== kotlin.bug.out
+main.kt:3:19: error: unresolved reference 'join'.

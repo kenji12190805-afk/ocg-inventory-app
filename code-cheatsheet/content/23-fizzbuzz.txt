@@ -1,0 +1,136 @@
+=== meta
+{"id":"fizzbuzz","category":"制御","title":"定番問題 FizzBuzz (条件とくりかえしの組み合わせ)","summary":"1から15まで、3の倍数は Fizz、5の倍数は Buzz、両方なら FizzBuzz を出す。","keywords":["fizzbuzz","フィズバズ","倍数","割り切れる","余り","条件分岐","繰り返し","定番","練習問題","問題"],
+"notes":{"python":"「15の倍数」を、3や5より先に調べるのがコツ。","javascript":"「15の倍数」を、3や5より先に調べるのがコツ。","c":"「15の倍数」を、3や5より先に調べるのがコツ。","kotlin":"when に条件を並べると、上から順に調べて最初に当たったものだけ実行される。"},
+"why":{"python":"3の倍数を先に調べると、15 も「3の倍数」で終わってしまい、FizzBuzz にならない。エラーにならないので気づきにくい。条件の順番が大事。","javascript":"3の倍数を先に調べると、15 も「3の倍数」で終わってしまい、FizzBuzz にならない。条件の順番が大事。","c":"3の倍数を先に調べると、15 も「3の倍数」で終わってしまい、FizzBuzz にならない。条件の順番が大事。","kotlin":"3の倍数を先に調べると、15 も「3の倍数」で終わってしまい、FizzBuzz にならない。条件の順番が大事。"}}
+=== python
+for n in range(1, 16):
+    if n % 15 == 0:
+        print("FizzBuzz")
+    elif n % 3 == 0:
+        print("Fizz")
+    elif n % 5 == 0:
+        print("Buzz")
+    else:
+        print(n)
+=== python.bug
+for n in range(1, 16):
+    if n % 3 == 0:
+        print("Fizz")
+    elif n % 5 == 0:
+        print("Buzz")
+    elif n % 15 == 0:
+        print("FizzBuzz")
+    else:
+        print(n)
+=== javascript
+for (let n = 1; n <= 15; n++) {
+  if (n % 15 === 0) {
+    console.log("FizzBuzz");
+  } else if (n % 3 === 0) {
+    console.log("Fizz");
+  } else if (n % 5 === 0) {
+    console.log("Buzz");
+  } else {
+    console.log(n);
+  }
+}
+=== javascript.bug
+for (let n = 1; n <= 15; n++) {
+  if (n % 3 === 0) {
+    console.log("Fizz");
+  } else if (n % 5 === 0) {
+    console.log("Buzz");
+  } else if (n % 15 === 0) {
+    console.log("FizzBuzz");
+  } else {
+    console.log(n);
+  }
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    for (int n = 1; n <= 15; n++) {
+        if (n % 15 == 0) {
+            printf("FizzBuzz\n");
+        } else if (n % 3 == 0) {
+            printf("Fizz\n");
+        } else if (n % 5 == 0) {
+            printf("Buzz\n");
+        } else {
+            printf("%d\n", n);
+        }
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    for (int n = 1; n <= 15; n++) {
+        if (n % 3 == 0) {
+            printf("Fizz\n");
+        } else if (n % 5 == 0) {
+            printf("Buzz\n");
+        } else if (n % 15 == 0) {
+            printf("FizzBuzz\n");
+        } else {
+            printf("%d\n", n);
+        }
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    for (n in 1..15) {
+        when {
+            n % 15 == 0 -> println("FizzBuzz")
+            n % 3 == 0 -> println("Fizz")
+            n % 5 == 0 -> println("Buzz")
+            else -> println(n)
+        }
+    }
+}
+=== kotlin.bug
+fun main() {
+    for (n in 1..15) {
+        when {
+            n % 3 == 0 -> println("Fizz")
+            n % 5 == 0 -> println("Buzz")
+            n % 15 == 0 -> println("FizzBuzz")
+            else -> println(n)
+        }
+    }
+}
+=== kotlin.out
+1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+FizzBuzz
+=== kotlin.bug.out
+1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+Fizz

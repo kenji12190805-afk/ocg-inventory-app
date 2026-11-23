@@ -18,5 +18,13 @@
  "sort": true,
  "search": true,
  "recursion": true,
- "null": true
+ "null": true,
+ "break": true,
+ "nested": true,
+ "fizzbuzz": true,
+ "logic": true,
+ "switch": true,
+ "slice": true,
+ "join": true,
+ "mapfilter": true
 }

@@ -1,0 +1,84 @@
+=== meta
+{"id":"break","category":"制御","title":"くりかえしを途中で抜ける・とばす (break / continue)","summary":"3はとばして、6になったら終わる。くりかえしの流れを途中で変える。","keywords":["break","continue","抜ける","とばす","スキップ","中断","途中で終わる","ループ","繰り返し","くりかえし","脱出"],
+"notes":{"python":"continue は「今回だけとばして次へ」、break は「くりかえし全体をやめる」。","javascript":"continue / break は for や while の中で使う。","c":"continue / break は for・while・switch の中で使う。","kotlin":"continue / break は for や while の中で使える。"},
+"why":{"python":"break は くりかえし(for や while)の中でしか使えない。","javascript":"forEach の { } は「くりかえし」ではなく「関数」なので、中で continue は使えない。for 文を使うか、return でとばす。","c":"break は くりかえしや switch の中でしか使えない。","kotlin":"break は くりかえし(for や while)の中でしか使えない。"}}
+=== python
+for i in range(1, 8):
+    if i == 3:
+        continue
+    if i == 6:
+        break
+    print(i)
+=== python.bug
+i = 3
+if i == 3:
+    break
+print(i)
+=== javascript
+for (let i = 1; i < 8; i++) {
+  if (i === 3) {
+    continue;
+  }
+  if (i === 6) {
+    break;
+  }
+  console.log(i);
+}
+=== javascript.bug
+[1, 2, 3].forEach((i) => {
+  if (i === 2) {
+    continue;
+  }
+  console.log(i);
+});
+=== c
+#include <stdio.h>
+
+int main(void) {
+    for (int i = 1; i < 8; i++) {
+        if (i == 3) {
+            continue;
+        }
+        if (i == 6) {
+            break;
+        }
+        printf("%d\n", i);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int x = 1;
+    if (x == 1) {
+        break;
+    }
+    printf("%d\n", x);
+    return 0;
+}
+=== kotlin
+fun main() {
+    for (i in 1..7) {
+        if (i == 3) {
+            continue
+        }
+        if (i == 6) {
+            break
+        }
+        println(i)
+    }
+}
+=== kotlin.bug
+fun main() {
+    val i = 3
+    if (i == 3) break
+    println(i)
+}
+=== kotlin.out
+1
+2
+4
+5
+=== kotlin.bug.out
+main.kt:3:17: error: 'break' and 'continue' are only allowed inside a loop.

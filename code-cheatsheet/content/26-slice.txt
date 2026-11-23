@@ -1,0 +1,59 @@
+=== meta
+{"id":"slice","category":"基本","title":"文字列の一部を取り出す (スライス・部分文字列)","summary":"\"Hello, World\" から、最初の5文字・7文字目から後ろ・最後の5文字を取り出す。","keywords":["スライス","slice","substring","部分文字列","一部","切り出し","取り出す","文字列","先頭","末尾","最後","番号","index"],
+"notes":{"python":"s[開始:終了] で取り出す(終了は含まない)。省略すると端まで。マイナスは後ろから数える。","javascript":"s.slice(開始, 終了) で取り出す(終了は含まない)。マイナスは後ろから数える。","c":"C には文字列のスライスがない。strncpy でコピーして、最後に '\\0' を自分で入れる。&s[7] で「7文字目から後ろ」を指せる。","kotlin":"substring(開始, 終了) で取り出す(終了は含まない)。最後の5文字は takeLast(5)。"},
+"why":{"python":"Python の文字列に slice() はない。s[0:5] のように [ ] の中で : を使う。","javascript":"JavaScript の [ ] の中に : は書けない。slice(0, 5) を使う。","c":"C の [ ] の中に : は書けない。strncpy でコピーする。","kotlin":"substr ではなく substring。名前は似ていても別物。"}}
+=== python
+s = "Hello, World"
+print(s[0:5])
+print(s[7:])
+print(s[-5:])
+=== python.bug
+s = "Hello, World"
+print(s.slice(0, 5))
+=== javascript
+const s = "Hello, World";
+console.log(s.slice(0, 5));
+console.log(s.slice(7));
+console.log(s.slice(-5));
+=== javascript.bug
+const s = "Hello, World";
+console.log(s[0:5]);
+=== c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char s[] = "Hello, World";
+    char part[8];
+    strncpy(part, s, 5);
+    part[5] = '\0';
+    printf("%s\n", part);
+    printf("%s\n", &s[7]);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char s[] = "Hello, World";
+    printf("%s\n", s[0:5]);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val s = "Hello, World"
+    println(s.substring(0, 5))
+    println(s.substring(7))
+    println(s.takeLast(5))
+}
+=== kotlin.bug
+fun main() {
+    val s = "Hello, World"
+    println(s.substr(0, 5))
+}
+=== kotlin.out
+Hello
+World
+World
+=== kotlin.bug.out
+main.kt:3:15: error: unresolved reference 'substr'.

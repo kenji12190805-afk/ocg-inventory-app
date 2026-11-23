@@ -1,0 +1,64 @@
+=== meta
+{"id":"mapfilter","category":"データ","title":"全部に同じ処理をする・条件で絞る・合計する (map / filter / sum)","summary":"[1,2,3,4,5] を2倍にする。偶数だけ取り出す。合計を求める。","keywords":["map","filter","reduce","sum","合計","全部","絞り込み","内包表記","リスト内包表記","ラムダ","高階関数","変換","偶数","配列","リスト"],
+"notes":{"python":"[式 for 変数 in リスト] はリスト内包表記。末尾に if をつけると絞り込み。合計は sum()。","javascript":"map(変換)、filter(条件)、reduce(まとめる)。 (n) => n * 2 は短い関数の書き方(アロー関数)。","c":"C には map も filter もない。for でぐるぐる回して、自分で書く。","kotlin":"map { it * 2 }、filter { 条件 }、sum()。it は「1つずつ取り出した値」。"},
+"why":{"python":"リスト内包表記の末尾の if のあとに条件が書かれていない。","javascript":"filter の中には「関数」を渡す。n % 2 === 0 だけ書くと、n という名前が見つからない。(n) => n % 2 === 0 と書く。","c":"C に ** (べき乗)の演算子はない。* が2つ並ぶと、ポインタの * として解釈されてエラーになる。","kotlin":"map には { } で関数(ラムダ)を渡す。it * 2 を ( ) の中に直接書くと、it が見つからない。"}}
+=== python
+nums = [1, 2, 3, 4, 5]
+print([n * 2 for n in nums])
+print([n for n in nums if n % 2 == 0])
+print(sum(nums))
+=== python.bug
+nums = [1, 2, 3, 4, 5]
+print([n for n in nums if])
+=== javascript
+const nums = [1, 2, 3, 4, 5];
+console.log(nums.map((n) => n * 2));
+console.log(nums.filter((n) => n % 2 === 0));
+console.log(nums.reduce((a, b) => a + b, 0));
+=== javascript.bug
+const nums = [1, 2, 3, 4, 5];
+console.log(nums.filter(n % 2 === 0));
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int nums[5] = {1, 2, 3, 4, 5};
+    int sum = 0;
+    for (int i = 0; i < 5; i++) {
+        printf("double: %d\n", nums[i] * 2);
+    }
+    for (int i = 0; i < 5; i++) {
+        if (nums[i] % 2 == 0) {
+            printf("even: %d\n", nums[i]);
+        }
+        sum += nums[i];
+    }
+    printf("sum: %d\n", sum);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int nums[3] = {1, 2, 3};
+    printf("%d\n", nums[1] ** 2);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val nums = listOf(1, 2, 3, 4, 5)
+    println(nums.map { it * 2 })
+    println(nums.filter { it % 2 == 0 })
+    println(nums.sum())
+}
+=== kotlin.bug
+fun main() {
+    val nums = listOf(1, 2, 3)
+    println(nums.map(it * 2))
+}
+=== kotlin.out
+[2, 4, 6, 8, 10]
+[2, 4]
+15
+=== kotlin.bug.out
+main.kt:3:22: error: unresolved reference 'it'.

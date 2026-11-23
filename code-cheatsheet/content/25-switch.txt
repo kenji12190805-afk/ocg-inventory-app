@@ -1,0 +1,109 @@
+=== meta
+{"id":"switch","category":"制御","title":"値によって分ける (switch / when / match)","summary":"数字(1〜3)を曜日に変える。if の else if を何個も書く代わりに使う。","keywords":["switch","case","when","match","分岐","場合分け","曜日","default","else","break","複数","条件分岐"],
+"notes":{"python":"Python 3.10 から match / case が使える。case _: は「どれでもないとき」。","javascript":"case ごとに break を書く。default は「どれでもないとき」。","c":"case ごとに break を書く。default は「どれでもないとき」。","kotlin":"when は break が要らない。else は「どれでもないとき」。値として変数に入れることもできる。"},
+"why":{"python":"case の行の最後に : が足りない。","javascript":"case の最後に break がないと、次の case も続けて実行される(フォールスルー)。エラーにならないので気づきにくい。","c":"case の最後に break がないと、次の case も続けて実行される(フォールスルー)。コンパイラが警告を出してくれることもある。","kotlin":"when を値として使うのに、else がない。どの値でもないときの結果が決まらない。"}}
+=== python
+day = 3
+match day:
+    case 1:
+        print("月")
+    case 2:
+        print("火")
+    case 3:
+        print("水")
+    case _:
+        print("その他")
+=== python.bug
+day = 3
+match day:
+    case 1
+        print("月")
+    case _:
+        print("その他")
+=== javascript
+const day = 3;
+switch (day) {
+  case 1:
+    console.log("月");
+    break;
+  case 2:
+    console.log("火");
+    break;
+  case 3:
+    console.log("水");
+    break;
+  default:
+    console.log("その他");
+}
+=== javascript.bug
+const day = 3;
+switch (day) {
+  case 1:
+    console.log("月");
+    break;
+  case 3:
+    console.log("水");
+  default:
+    console.log("その他");
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+    switch (day) {
+        case 1:
+            printf("Mon\n");
+            break;
+        case 2:
+            printf("Tue\n");
+            break;
+        case 3:
+            printf("Wed\n");
+            break;
+        default:
+            printf("other\n");
+            break;
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int day = 3;
+    switch (day) {
+        case 1:
+            printf("Mon\n");
+            break;
+        case 3:
+            printf("Wed\n");
+        default:
+            printf("other\n");
+            break;
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val day = 3
+    when (day) {
+        1 -> println("月")
+        2 -> println("火")
+        3 -> println("水")
+        else -> println("その他")
+    }
+}
+=== kotlin.bug
+fun main() {
+    val day = 3
+    val name = when (day) {
+        1 -> "月"
+        2 -> "火"
+    }
+    println(name)
+}
+=== kotlin.out
+水
+=== kotlin.bug.out
+main.kt:3:16: error: 'when' expression must be exhaustive. Add the 'else' branch.

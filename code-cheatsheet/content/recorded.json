@@ -458,5 +458,189 @@
     "failed": true
    }
   }
+ },
+ "break": {
+  "python": {
+   "out": "1\n2\n4\n5",
+   "bug": {
+    "text": "  File \"main.py\", line 3\nSyntaxError: 'break' outside loop",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "1\n2\n4\n5",
+   "bug": {
+    "text": "SyntaxError: Illegal continue statement: no surrounding iteration statement",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "1\n2\n4\n5",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:6:9: error: break statement not within loop or switch\n    6 |         break;\n      |         ^~~~~",
+    "failed": true
+   }
+  }
+ },
+ "nested": {
+  "python": {
+   "out": "  1  2  3\n  2  4  6\n  3  6  9",
+   "bug": {
+    "text": "  File \"main.py\", line 4\n    print(\"---\")\n                ^\nIndentationError: unindent does not match any outer indentation level",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "  1  2  3\n  2  4  6\n  3  6  9",
+   "bug": {
+    "text": "SyntaxError: Identifier 'row' has already been declared",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "  1  2  3\n  2  4  6\n  3  6  9",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:9: error: redefinition of 'row'\n    5 |     int row = 1;\n      |         ^~~\nmain.c:4:9: note: previous definition of 'row' with type 'int'\n    4 |     int row = 0;\n      |         ^~~",
+    "failed": true
+   }
+  }
+ },
+ "fizzbuzz": {
+  "python": {
+   "out": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz",
+   "bug": {
+    "text": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizz",
+    "failed": false
+   }
+  },
+  "javascript": {
+   "out": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz",
+   "bug": {
+    "text": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizz",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz",
+   "bug": {
+    "text": "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizz",
+    "failed": false
+   }
+  }
+ },
+ "logic": {
+  "python": {
+   "out": "True\nFalse\nFalse",
+   "bug": {
+    "text": "  File \"main.py\", line 3\n    print(age >= 18 && has_ticket)\n                     ^\nSyntaxError: invalid syntax",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "true\nfalse\nfalse",
+   "bug": {
+    "text": "SyntaxError: missing ) after argument list",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "1\n0\n0",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:6:29: error: expected ')' before 'and'\n    6 |     printf(\"%d\\n\", age >= 18 and has_ticket);\n      |           ~                 ^~~~\n      |                             )",
+    "failed": true
+   }
+  }
+ },
+ "switch": {
+  "python": {
+   "out": "水",
+   "bug": {
+    "text": "  File \"main.py\", line 3\n    case 1\n          ^\nSyntaxError: expected ':'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "水",
+   "bug": {
+    "text": "水\nその他",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "Wed",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:10:13: warning: this statement may fall through [-Wimplicit-fallthrough=]\n   10 |             printf(\"Wed\\n\");\n      |             ^~~~~~~~~~~~~~~\nmain.c:11:9: note: here\n   11 |         default:\n      |         ^~~~~~~\nWed\nother",
+    "failed": false
+   }
+  }
+ },
+ "slice": {
+  "python": {
+   "out": "Hello\nWorld\nWorld",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(s.slice(0, 5))\n          ^^^^^^^\nAttributeError: 'str' object has no attribute 'slice'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "Hello\nWorld\nWorld",
+   "bug": {
+    "text": "SyntaxError: Unexpected token ':'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "Hello\nWorld",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:23: error: expected ']' before ':' token\n    5 |     printf(\"%s\\n\", s[0:5]);\n      |                       ^\n      |                       ]\nmain.c:5:14: warning: format '%s' expects argument of type 'char *', but argument 2 has type 'int' [-Wformat=]\n    5 |     printf(\"%s\\n\", s[0:5]);\n      |             ~^     ~~~~~~\n      |              |      |\n      |              char * int\n      |             %d",
+    "failed": true
+   }
+  }
+ },
+ "join": {
+  "python": {
+   "out": "apple, banana, cherry\nhello\nababab",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(words.join(\", \"))\n          ^^^^^^^^^^\nAttributeError: 'list' object has no attribute 'join'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "apple, banana, cherry\nhello\nababab",
+   "bug": {
+    "text": "TypeError: \"  hello  \".strip is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "apple, banana, cherry\nababab",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:25: error: request for member 'join' in something not a structure or union\n    5 |     printf(\"%s\\n\", words.join(\", \"));\n      |                         ^",
+    "failed": true
+   }
+  }
+ },
+ "mapfilter": {
+  "python": {
+   "out": "[2, 4, 6, 8, 10]\n[2, 4]\n15",
+   "bug": {
+    "text": "  File \"main.py\", line 2\n    print([n for n in nums if])\n                             ^\nSyntaxError: invalid syntax",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "[2, 4, 6, 8, 10]\n[2, 4]\n15",
+   "bug": {
+    "text": "ReferenceError: n is not defined",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "double: 2\ndouble: 4\ndouble: 6\ndouble: 8\ndouble: 10\neven: 2\neven: 4\nsum: 15",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:29: error: invalid type argument of unary '*' (have 'int')\n    5 |     printf(\"%d\\n\", nums[1] ** 2);\n      |                             ^~~",
+    "failed": true
+   }
+  }
  }
 }
