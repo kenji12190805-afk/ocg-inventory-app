@@ -1,0 +1,11 @@
+{
+  "appId": "dev.kenji.codedict",
+  "appName": "コード辞典",
+  "webDir": "dist-app",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

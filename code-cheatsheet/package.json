@@ -10,15 +10,20 @@
     "build": "node scripts/copy-pyodide.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
     "record": "node scripts/record.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "build:app": "node scripts/copy-pyodide.mjs && tsc --noEmit && vite build --mode native --outDir dist-app",
+    "android:sync": "npm run build:app && cap sync android"
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-javascript": "^6.2.5",

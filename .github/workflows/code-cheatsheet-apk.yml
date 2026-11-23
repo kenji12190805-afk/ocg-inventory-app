@@ -1,0 +1,57 @@
+# コード辞典(code-cheatsheet)の Android アプリ(APK)をビルドする。
+# 終わると、リリース "code-dict-latest" に code-dict.apk が置かれる(スマホのブラウザからダウンロードしてインストール)。
+name: Build code-cheatsheet Android APK
+
+on:
+  push:
+    paths: ['code-cheatsheet/**', '.github/workflows/code-cheatsheet-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: code-dict-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: code-cheatsheet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: code-cheatsheet/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      # Web版をアプリ用にビルド → Android プロジェクトに取り込む
+      - run: npm run android:sync
+      - name: Build debug APK
+        working-directory: code-cheatsheet/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk code-dict.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: code-dict-apk
+          path: code-cheatsheet/code-dict.apk
+      - name: Publish APK as a release (download from the phone)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete code-dict-latest --cleanup-tag --yes || true
+          gh release create code-dict-latest code-dict.apk \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "コード辞典 (Android APK)" \
+            --notes "最新のビルド。スマホのブラウザで code-dict.apk をダウンロードして開くとインストールできます。コミット: ${{ github.sha }}"

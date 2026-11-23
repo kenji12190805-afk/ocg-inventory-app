@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">コード辞典</string>
+    <string name="title_activity_main">コード辞典</string>
+    <string name="package_name">dev.kenji.codedict</string>
+    <string name="custom_url_scheme">dev.kenji.codedict</string>
+</resources>

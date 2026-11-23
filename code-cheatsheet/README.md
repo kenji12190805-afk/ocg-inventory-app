@@ -76,3 +76,18 @@ vite.config.ts      PWA 設定と picoc-js の小さなパッチ(終了コール
 - **Kotlin の「ネットで実行」**は第三者の API(`api.kotlinlang.org`)を使う。API の仕様変更や制限で止まることがある。そのとき画面にはエラーが出るだけで、他の機能には影響しない。
 - C は picoc(簡易インタプリタ)なので、gcc でエラーになるコードが動いてしまうことや、その逆がある。エラーの例では、画面に本物の gcc の結果も並べて出す。
 - `picoc-js` は 2022 年以降更新されていない小さなパッケージ(MIT)。`vite.config.ts` でビルド時に1か所だけパッチしている。
+
+## Android アプリ(APK)
+
+Capacitor で Web 版を包んだ Android アプリ。全部アプリの中に入るので、初回起動から圏外で動く(Kotlin の「ネットで実行」だけはネット必須)。
+
+- GitHub Actions(`.github/workflows/code-cheatsheet-apk.yml`)が、プッシュのたびに APK をビルドして、リリース `code-dict-latest` に `code-dict.apk` を置く。
+- スマホのブラウザでそのリリースから `code-dict.apk` をダウンロードして開くとインストールできる(「提供元不明のアプリ」の許可が必要)。
+- デバッグ署名の APK。ビルドのたびに署名鍵が変わるので、更新するときは、先に古いアプリを削除してからインストールする。
+
+手元でビルドするなら(Android SDK と Java 21 が必要):
+
+```bash
+npm run android:sync                  # Web版をアプリ用にビルドして android/ に取り込む
+cd android && ./gradlew assembleDebug # android/app/build/outputs/apk/debug/app-debug.apk
+```

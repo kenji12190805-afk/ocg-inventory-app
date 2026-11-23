@@ -1,4 +1,5 @@
 import { defineConfig, type Plugin } from 'vite';
+import { fileURLToPath } from 'node:url';
 import { VitePWA } from 'vite-plugin-pwa';
 
 /**
@@ -26,11 +27,13 @@ function patchPicoc(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: './',
+  resolve: { alias: mode === 'native' ? { 'virtual:pwa-register': fileURLToPath(new URL('./src/pwa-stub.ts', import.meta.url)) } : {} },
   plugins: [
     patchPicoc(),
-    VitePWA({
+    // Android アプリ(mode=native)では全部アプリに同梱するので、Service Worker は使わない
+    mode !== 'native' && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg'],
       manifest: {
@@ -60,4 +63,4 @@ export default defineConfig({
   ],
   worker: { format: 'es', plugins: () => [patchPicoc()] },
   build: { target: 'es2022', chunkSizeWarningLimit: 2000 },
-});
+}));
