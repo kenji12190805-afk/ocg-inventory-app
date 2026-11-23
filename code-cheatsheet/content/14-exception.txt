@@ -1,0 +1,76 @@
+=== meta
+{"id":"exception","category":"エラー処理","title":"エラーを受け止める (例外処理)","summary":"数字ではない文字を数値に変えようとして失敗しても、プログラムを止めずに対処する。","keywords":["例外","exception","try","catch","except","finally","エラー処理","エラー","ハンドリング","throw","raise","異常","落ちる","クラッシュ"],
+"notes":{"python":"try: ... except エラーの種類: ... で受け止める。finally は成功しても失敗しても最後に必ず実行される。","javascript":"try { ... } catch (e) { ... } で受け止める。e.name がエラーの種類。","c":"C に例外はない。関数の戻り値(0か-1など)でエラーを知らせ、呼び出した側で確認する。","kotlin":"try { ... } catch (e: エラーの型) { ... } で受け止める。"},
+"why":{"python":"受け止めていないエラーはプログラムを止め、「どの行で何が起きたか」(トレースバック)を表示する。最後の行が原因。","javascript":"JSON として正しくない文字を JSON.parse した。受け止めないとプログラムが止まる。","c":"0で割った。C は割り算の0チェックをしてくれない。実行時に OS がプログラムを止める。","kotlin":"受け止めていない例外はプログラムを止め、原因と場所を表示する。"}}
+=== python
+try:
+    x = int("abc")
+    print(x)
+except ValueError:
+    print("数字ではありません")
+finally:
+    print("おわり")
+=== python.bug
+x = int("abc")
+print(x)
+=== javascript
+try {
+  JSON.parse("{bad json");
+} catch (e) {
+  console.log("失敗:", e.name);
+} finally {
+  console.log("おわり");
+}
+=== javascript.bug
+const data = JSON.parse("{bad json");
+console.log(data);
+=== c
+#include <stdio.h>
+
+int divide(int a, int b, int *result) {
+    if (b == 0) {
+        return -1;
+    }
+    *result = a / b;
+    return 0;
+}
+
+int main(void) {
+    int r;
+    if (divide(10, 0, &r) != 0) {
+        printf("cannot divide by zero\n");
+    } else {
+        printf("%d\n", r);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int x = 0;
+    printf("%d\n", 10 / x);
+    return 0;
+}
+=== kotlin
+fun main() {
+    try {
+        val x = "abc".toInt()
+        println(x)
+    } catch (e: NumberFormatException) {
+        println("数字ではありません")
+    } finally {
+        println("おわり")
+    }
+}
+=== kotlin.bug
+fun main() {
+    val x = "abc".toInt()
+    println(x)
+}
+=== kotlin.out
+数字ではありません
+おわり
+=== kotlin.bug.out
+Exception in thread "main" java.lang.NumberFormatException: For input string: "abc"
+	at ... (エラーが起きた場所の一覧が続く)

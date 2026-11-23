@@ -1,0 +1,58 @@
+=== meta
+{"id":"variables","category":"基本","title":"変数に値を入れる","summary":"名前をつけて値をしまっておく。数値・文字・小数など「型」の違いも見る。","keywords":["変数","variable","代入","型","type","int","double","const","val","var","let","定数"],
+"notes":{"python":"型を書かなくていい。あとから別の型を入れることもできる。","javascript":"変えない値は const、変える値は let を使う(var は古い書き方)。","c":"型を必ず書く。小数は double、1文字は char('A')。","kotlin":"変えない値は val、変える値は var。型は自動で推測してくれる。"},
+"why":{"python":"変数名のタイプミス(name → nmae)。存在しない名前は使えない。","javascript":"const で作った変数は、あとから入れ直せない。","c":"変数名のタイプミス(age → agee)。C は宣言していない名前を使えない。","kotlin":"val で作った変数は、あとから入れ直せない。"}}
+=== python
+name = "ケンジ"
+age = 30
+price = 19.8
+print(name, age, price)
+print(type(age))
+=== python.bug
+name = "ケンジ"
+print(nmae)
+=== javascript
+const name = "ケンジ";
+let age = 30;
+age = 31;
+console.log(name, age, typeof age);
+=== javascript.bug
+const name = "ケンジ";
+name = "タロウ";
+console.log(name);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int age = 30;
+    double price = 19.8;
+    char initial = 'K';
+    printf("%d %.1f %c\n", age, price, initial);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int age = 30;
+    printf("%d\n", agee);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val name = "ケンジ"
+    var age = 30
+    age = 31
+    val price = 19.8
+    println("$name $age $price")
+}
+=== kotlin.bug
+fun main() {
+    val name = "ケンジ"
+    name = "タロウ"
+    println(name)
+}
+=== kotlin.out
+ケンジ 31 19.8
+=== kotlin.bug.out
+main.kt:3:5: error: val cannot be reassigned.

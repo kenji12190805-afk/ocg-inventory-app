@@ -1,0 +1,101 @@
+=== meta
+{"id":"class","category":"関数とクラス","title":"データと処理をまとめる (クラス・構造体)","summary":"名前と年齢を持つ「人」を作って、自己紹介させる。","keywords":["クラス","class","オブジェクト","構造体","struct","インスタンス","コンストラクタ","メソッド","フィールド","プロパティ","new","self","this","オブジェクト指向"],
+"notes":{"python":"class 名前: の中に __init__(初期化)とメソッドを書く。メソッドの1つ目の引数は必ず self。","javascript":"class の中に constructor とメソッドを書く。作るときは new が必要。","c":"C にクラスはない。struct でデータをまとめ、処理は別の関数で書く。","kotlin":"class 名前(val 名前: 型, ...) の1行で、プロパティつきのクラスが作れる。"},
+"why":{"python":"メソッドの引数に self を書き忘れた。呼び出すと自動で自分自身が渡されるため、引数の数が合わなくなる。","javascript":"クラスは new をつけて呼ぶ。new を忘れるとエラー。","c":"struct にないメンバー名(nam)を使った。名前のタイプミス。","kotlin":"val で作ったプロパティは、あとから書き換えられない。変えたいなら var にする。"}}
+=== python
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def intro(self):
+        print(f"{self.name}です。{self.age}歳です。")
+
+p = Person("ケンジ", 30)
+p.intro()
+=== python.bug
+class Person:
+    def __init__(self, name):
+        self.name = name
+
+    def intro():
+        print(self.name)
+
+Person("ケンジ").intro()
+=== javascript
+class Person {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+  intro() {
+    console.log(`${this.name}です。${this.age}歳です。`);
+  }
+}
+
+const p = new Person("ケンジ", 30);
+p.intro();
+=== javascript.bug
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+const p = Person("ケンジ");
+=== c
+#include <stdio.h>
+#include <string.h>
+
+struct Person {
+    char name[32];
+    int age;
+};
+
+void intro(struct Person p) {
+    printf("I am %s. %d years old.\n", p.name, p.age);
+}
+
+int main(void) {
+    struct Person p;
+    strcpy(p.name, "Kenji");
+    p.age = 30;
+    intro(p);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+struct Person {
+    char name[32];
+    int age;
+};
+
+int main(void) {
+    struct Person p;
+    p.age = 30;
+    printf("%d\n", p.nam);
+    return 0;
+}
+=== kotlin
+class Person(val name: String, val age: Int) {
+    fun intro() {
+        println("${name}です。${age}歳です。")
+    }
+}
+
+fun main() {
+    val p = Person("ケンジ", 30)
+    p.intro()
+}
+=== kotlin.bug
+class Person(val name: String, val age: Int)
+
+fun main() {
+    val p = Person("ケンジ", 30)
+    p.age = 31
+}
+=== kotlin.out
+ケンジです。30歳です。
+=== kotlin.bug.out
+main.kt:5:7: error: val cannot be reassigned.

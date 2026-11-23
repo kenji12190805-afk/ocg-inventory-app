@@ -1,0 +1,55 @@
+=== meta
+{"id":"null","category":"エラー処理","title":"「値がない」を安全に扱う (None / null)","summary":"値が入っていない変数に、代わりの値(ゲスト)を使う。","keywords":["null","None","NULL","nil","undefined","ヌル","値がない","空","nullable","null安全","NullPointerException","ぬるぽ","?.","??","?:","オプショナル"],
+"notes":{"python":"「値がない」は None。調べるときは == ではなく is None。","javascript":"?? は「null か undefined のときだけ」代わりの値を使う。?. は null でも落ちずに undefined を返す。","c":"「値がない」ポインタは NULL。使う前に必ず NULL かどうか確認する。","kotlin":"null を入れていい型には ? をつける(String?)。?. は安全な呼び出し、?: は代わりの値。"},
+"why":{"python":"None に対して .upper() は使えない。使う前に None でないか確認する。","javascript":"null の .length を読もうとして落ちた。?. を使うか、先に確認する。","c":"NULL のポインタの中身を読もうとした。OS が「そんな場所は読めない」とプログラムを止める。","kotlin":"null かもしれない型(String?)にそのまま . でアクセスしようとした。Kotlin はコンパイルの時点で止めてくれる。"}}
+=== python
+name = None
+if name is None:
+    print("名前が未設定")
+print(name or "ゲスト")
+=== python.bug
+name = None
+print(name.upper())
+=== javascript
+const name = null;
+console.log(name ?? "ゲスト");
+console.log(name?.length);
+=== javascript.bug
+const name = null;
+console.log(name.length);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char *name = NULL;
+    if (name == NULL) {
+        printf("name is not set\n");
+    }
+    printf("%s\n", name != NULL ? name : "guest");
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char *name = NULL;
+    printf("%d\n", (int)strlen(name));
+    return 0;
+}
+=== kotlin
+fun main() {
+    val name: String? = null
+    println(name ?: "ゲスト")
+    println(name?.length)
+}
+=== kotlin.bug
+fun main() {
+    val name: String? = null
+    println(name.length)
+}
+=== kotlin.out
+ゲスト
+null
+=== kotlin.bug.out
+main.kt:3:18: error: only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.

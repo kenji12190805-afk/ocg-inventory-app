@@ -1,0 +1,88 @@
+=== meta
+{"id":"function","category":"関数とクラス","title":"処理をまとめて名前をつける (関数)","summary":"足し算する関数と、あいさつする関数(引数の初期値つき)。","keywords":["関数","function","def","fun","func","引数","argument","parameter","戻り値","return","呼び出し","メソッド","初期値","デフォルト引数"],
+"notes":{"python":"def 関数名(引数): で作る。引数に = で初期値をつけられる。","javascript":"function で作る。短く書くアロー関数 (a, b) => a * b もよく使う。","c":"戻り値の型・引数の型を必ず書く。値を返さないときは void。使う前に定義(または宣言)しておく。","kotlin":"fun で作る。引数の型と戻り値の型を : で書く。引数に = で初期値をつけられる。"},
+"why":{"python":"必要な引数(b)が足りない。引数の数を合わせるか、初期値を決めておく。","javascript":"JavaScript は引数が足りなくてもエラーにならず、足りない分は undefined になる。計算すると NaN(数ではない)になる。","c":"引数の数が足りない。C は引数の数と型を厳しくチェックする。","kotlin":"必要な引数(b)に値を渡していない。"}}
+=== python
+def add(a, b):
+    return a + b
+
+def greet(name="ゲスト"):
+    print(f"こんにちは、{name}さん")
+
+print(add(2, 3))
+greet()
+greet("ケンジ")
+=== python.bug
+def add(a, b):
+    return a + b
+
+print(add(2))
+=== javascript
+function add(a, b) {
+  return a + b;
+}
+
+function greet(name = "ゲスト") {
+  console.log(`こんにちは、${name}さん`);
+}
+
+console.log(add(2, 3));
+greet();
+greet("ケンジ");
+=== javascript.bug
+function add(a, b) {
+  return a + b;
+}
+
+console.log(add(2));
+=== c
+#include <stdio.h>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+void greet(char *name) {
+    printf("Hello, %s!\n", name);
+}
+
+int main(void) {
+    printf("%d\n", add(2, 3));
+    greet("Kenji");
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    printf("%d\n", add(2));
+    return 0;
+}
+=== kotlin
+fun add(a: Int, b: Int): Int = a + b
+
+fun greet(name: String = "ゲスト") {
+    println("こんにちは、${name}さん")
+}
+
+fun main() {
+    println(add(2, 3))
+    greet()
+    greet("ケンジ")
+}
+=== kotlin.bug
+fun add(a: Int, b: Int): Int = a + b
+
+fun main() {
+    println(add(2))
+}
+=== kotlin.out
+5
+こんにちは、ゲストさん
+こんにちは、ケンジさん
+=== kotlin.bug.out
+main.kt:4:18: error: no value passed for parameter 'b'.

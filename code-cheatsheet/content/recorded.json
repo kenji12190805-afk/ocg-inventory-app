@@ -1,0 +1,462 @@
+{
+ "hello": {
+  "python": {
+   "out": "Hello, World!",
+   "bug": {
+    "text": "  File \"main.py\", line 1\n    print(\"Hello, World!)\n          ^\nSyntaxError: unterminated string literal (detected at line 1)",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "Hello, World!",
+   "bug": {
+    "text": "SyntaxError: missing ) after argument list",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "Hello, World!",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:30: error: expected ';' before 'return'\n    4 |     printf(\"Hello, World!\\n\")\n      |                              ^\n      |                              ;\n    5 |     return 0;\n      |     ~~~~~~",
+    "failed": true
+   }
+  }
+ },
+ "variables": {
+  "python": {
+   "out": "ケンジ 30 19.8\n<class 'int'>",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(nmae)\n          ^^^^\nNameError: name 'nmae' is not defined",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "ケンジ 31 number",
+   "bug": {
+    "text": "TypeError: Assignment to constant variable.",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "30 19.8 K",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:20: error: 'agee' undeclared (first use in this function); did you mean 'age'?\n    5 |     printf(\"%d\\n\", agee);\n      |                    ^~~~\n      |                    age\nmain.c:5:20: note: each undeclared identifier is reported only once for each function it appears in",
+    "failed": true
+   }
+  }
+ },
+ "string": {
+  "python": {
+   "out": "5\nHello World\nHELLO",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 1, in <module>\n    print(\"Age: \" + 30)\n          ~~~~~~~~^~~~\nTypeError: can only concatenate str (not \"int\") to str",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "5\nHello World\nHELLO",
+   "bug": {
+    "text": "TypeError: s.size is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "5\nHello World\nHELLO WORLD",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:7: error: assignment to expression with array type\n    5 |     s = \"World\";\n      |       ^",
+    "failed": true
+   }
+  }
+ },
+ "format": {
+  "python": {
+   "out": "ケンジさんの点数は85.5点です",
+   "bug": {
+    "text": "点数は{score}点",
+    "failed": false
+   }
+  },
+  "javascript": {
+   "out": "ケンジさんの点数は85.5点です",
+   "bug": {
+    "text": "点数は${score}点",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "Kenji's score: 85.5 points",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:14: warning: format '%s' expects argument of type 'char *', but argument 2 has type 'int' [-Wformat=]\n    4 |     printf(\"%s\\n\", 42);\n      |             ~^     ~~\n      |              |     |\n      |              |     int\n      |              char *\n      |             %d\nSegmentation fault",
+    "failed": true
+   }
+  }
+ },
+ "if": {
+  "python": {
+   "out": "合格",
+   "bug": {
+    "text": "  File \"main.py\", line 2\n    if score >= 60\n                  ^\nSyntaxError: expected ':'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "合格",
+   "bug": {
+    "text": "SyntaxError: Unexpected token '{'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "pass",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:9: warning: suggest parentheses around assignment used as truth value [-Wparentheses]\n    5 |     if (score = 80) {\n      |         ^~~~~\nexcellent",
+    "failed": false
+   }
+  }
+ },
+ "for": {
+  "python": {
+   "out": "1\n2\n3\n4\n5\n合計: 15",
+   "bug": {
+    "text": "  File \"main.py\", line 2\n    print(i)\n    ^^^^^\nIndentationError: expected an indented block after 'for' statement on line 1",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "1\n2\n3\n4\n5\n合計: 15",
+   "bug": {
+    "text": "SyntaxError: Unexpected token '{'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "1\n2\n3\n4\n5\ntotal: 15",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:23: error: expected '=', ',', ';', 'asm' or '__attribute__' before '<=' token\n    4 |     for (int i = 1, i <= 5; i++) {\n      |                       ^~\nmain.c:4:32: error: expected ';' before ')' token\n    4 |     for (int i = 1, i <= 5; i++) {\n      |                                ^\n      |                                ;",
+    "failed": true
+   }
+  }
+ },
+ "while": {
+  "python": {
+   "out": "128",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    while n < \"100\":\n          ^^^^^^^^^\nTypeError: '<' not supported between instances of 'int' and 'str'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "128",
+   "bug": {
+    "text": "TypeError: Assignment to constant variable.",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "128",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:11: error: expected '(' before 'n'\n    5 |     while n < 100 {\n      |           ^\n      |           (\nmain.c:5:11: warning: statement with no effect [-Wunused-value]",
+    "failed": true
+   }
+  }
+ },
+ "list": {
+  "python": {
+   "out": "りんご\nぶどう\n3",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(fruits[3])\n          ~~~~~~^^^\nIndexError: list index out of range",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "りんご\nぶどう\n3",
+   "bug": {
+    "text": "undefined",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "80\n90\n3",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:14: error: expected expression before '{' token\n    5 |     scores = {1, 2, 3};\n      |              ^",
+    "failed": true
+   }
+  }
+ },
+ "append": {
+  "python": {
+   "out": "[1, 3, 4]",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    nums.add(4)\n    ^^^^^^^^\nAttributeError: 'list' object has no attribute 'add'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "[1, 3, 4]",
+   "bug": {
+    "text": "TypeError: nums.append is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "1\n2\n3\n4",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:9: error: request for member 'push' in something not a structure or union\n    5 |     nums.push(4);\n      |         ^",
+    "failed": true
+   }
+  }
+ },
+ "iterate": {
+  "python": {
+   "out": "りんご\nみかん\nぶどう\n1 りんご\n2 みかん\n3 ぶどう",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 1, in <module>\n    for i in 5:\n             ^\nTypeError: 'int' object is not iterable",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "りんご\nみかん\nぶどう\n1 りんご\n2 みかん\n3 ぶどう",
+   "bug": {
+    "text": "0\n1\n2",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "1 apple\n2 orange\n3 grape",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:10: error: unknown type name 'fruit'\n    5 |     for (fruit in fruits) {\n      |          ^~~~~\nmain.c:5:19: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'fruits'\n    5 |     for (fruit in fruits) {\n      |                   ^~~~~~\nmain.c:8:5: error: expected expression before 'return'\n    8 |     return 0;\n      |     ^~~~~~\nmain.c:9:1: error: expected expression before '}' token\n    9 | }\n      | ^\nmain.c:9:1: error: expected expression before '}' token",
+    "failed": true
+   }
+  }
+ },
+ "dict": {
+  "python": {
+   "out": "30\nケンジ 30\nハナ 25\nタロウ 20\nいない",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(ages[\"ゴロウ\"])\n          ~~~~^^^^^^^^^^\nKeyError: 'ゴロウ'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "30\nケンジ 30\nハナ 25\nタロウ 20\nいない",
+   "bug": {
+    "text": "TypeError: Cannot read properties of undefined (reading 'length')",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "Hana is 25",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:24: error: array subscript is not an integer\n    5 |     printf(\"%d\\n\", ages[\"Hana\"]);\n      |                        ^",
+    "failed": true
+   }
+  }
+ },
+ "function": {
+  "python": {
+   "out": "5\nこんにちは、ゲストさん\nこんにちは、ケンジさん",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 4, in <module>\n    print(add(2))\n          ~~~^^^\nTypeError: add() missing 1 required positional argument: 'b'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "5\nこんにちは、ゲストさん\nこんにちは、ケンジさん",
+   "bug": {
+    "text": "NaN",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "5\nHello, Kenji!",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:8:20: error: too few arguments to function 'add'\n    8 |     printf(\"%d\\n\", add(2));\n      |                    ^~~\nmain.c:3:5: note: declared here\n    3 | int add(int a, int b) {\n      |     ^~~",
+    "failed": true
+   }
+  }
+ },
+ "class": {
+  "python": {
+   "out": "ケンジです。30歳です。",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 8, in <module>\n    Person(\"ケンジ\").intro()\n    ~~~~~~~~~~~~~~~~~~~~~~^^\nTypeError: Person.intro() takes 0 positional arguments but 1 was given",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "ケンジです。30歳です。",
+   "bug": {
+    "text": "TypeError: Class constructor Person cannot be invoked without 'new'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "I am Kenji. 30 years old.",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:11:22: error: 'struct Person' has no member named 'nam'; did you mean 'name'?\n   11 |     printf(\"%d\\n\", p.nam);\n      |                      ^~~\n      |                      name",
+    "failed": true
+   }
+  }
+ },
+ "exception": {
+  "python": {
+   "out": "数字ではありません\nおわり",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 1, in <module>\n    x = int(\"abc\")\nValueError: invalid literal for int() with base 10: 'abc'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "失敗: SyntaxError\nおわり",
+   "bug": {
+    "text": "SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "cannot divide by zero",
+   "bug": {
+    "text": "Floating point exception",
+    "failed": true
+   }
+  }
+ },
+ "convert": {
+  "python": {
+   "out": "43\n3.5円\n5.0",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 1, in <module>\n    n = int(\"4.2\")\nValueError: invalid literal for int() with base 10: '4.2'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "43\n3.5円\n5",
+   "bug": {
+    "text": "421",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "43\n5.0",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:13: warning: implicit declaration of function 'atoi' [-Wimplicit-function-declaration]\n    4 |     int n = atoi(\"42\");\n      |             ^~~~\n43",
+    "failed": false
+   }
+  }
+ },
+ "math": {
+  "python": {
+   "out": "10 4 21\n3.5\n3\n1\n1024",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 1, in <module>\n    print(7 / 0)\n          ~~^~~\nZeroDivisionError: division by zero",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "10 4 21\n3.5\n3\n1\n1024",
+   "bug": {
+    "text": "Infinity",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "10 4 21\n3\n3.5\n1",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:22: error: invalid operands to binary % (have 'int' and 'double')\n    4 |     printf(\"%d\\n\", 7 % 2.0);\n      |                      ^",
+    "failed": true
+   }
+  }
+ },
+ "sort": {
+  "python": {
+   "out": "[1, 2, 5, 9]\n[9, 5, 2, 1]",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    nums.sort(True)\n    ~~~~~~~~~^^^^^^\nTypeError: sort() takes no positional arguments",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "[2, 5, 9, 10]\n[10, 9, 5, 2]",
+   "bug": {
+    "text": "[10, 2, 5, 9]",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "1\n2\n5\n9",
+   "bug": {
+    "text": "1\n1\n1\n1",
+    "failed": false
+   }
+  }
+ },
+ "search": {
+  "python": {
+   "out": "True\napple / banana / cherry\n['apple', 'banana', 'cherry']",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(s.replace(\",\"))\n          ~~~~~~~~~^^^^^\nTypeError: replace() takes at least 2 positional arguments (1 given)",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "true\napple / banana / cherry\n['apple', 'banana', 'cherry']",
+   "bug": {
+    "text": "TypeError: s.contains is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "found banana\napple banana cherry",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:6:9: error: too few arguments to function 'strstr'\n    6 |     if (strstr(\"banana\") != NULL) {\n      |         ^~~~~~\nIn file included from main.c:2:\n/usr/include/string.h:350:14: note: declared here\n  350 | extern char *strstr (const char *__haystack, const char *__needle)\n      |              ^~~~~~",
+    "failed": true
+   }
+  }
+ },
+ "recursion": {
+  "python": {
+   "out": "120",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 6, in <module>\n    print(fact(\"5\"))\n          ~~~~^^^^^\n  File \"main.py\", line 2, in fact\n    if n <= 1:\n       ^^^^^^\nTypeError: '<=' not supported between instances of 'str' and 'int'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "120",
+   "bug": {
+    "text": "RangeError: Maximum call stack size exceeded",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "120",
+   "bug": {
+    "text": "main.c: In function 'fact':\nmain.c:3:5: warning: infinite recursion detected [-Winfinite-recursion]\n    3 | int fact(int n) {\n      |     ^~~~\nmain.c:4:16: note: recursive call\n    4 |     return n * fact(n - 1);\n      |                ^~~~~~~~~~~\nSegmentation fault",
+    "failed": true
+   }
+  }
+ },
+ "null": {
+  "python": {
+   "out": "名前が未設定\nゲスト",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(name.upper())\n          ^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'upper'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "ゲスト\nundefined",
+   "bug": {
+    "text": "TypeError: Cannot read properties of null (reading 'length')",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "name is not set\nguest",
+   "bug": {
+    "text": "Segmentation fault",
+    "failed": true
+   }
+  }
+ }
+}

@@ -1,0 +1,66 @@
+=== meta
+{"id":"search","category":"基本","title":"文字列を探す・置き換える・区切る","summary":"文字列の中に特定の文字が含まれるか、置き換え、カンマで区切って分ける。","keywords":["検索","探す","含む","contains","includes","in","strstr","置換","replace","分割","split","区切る","文字列","カンマ","CSV"],
+"notes":{"python":"含むかは in。置換は replace(元, 新)。区切りは split(\",\")。","javascript":"含むかは includes。置換は replaceAll(元, 新)。区切りは split(\",\")。","c":"含むかは string.h の strstr(見つからないと NULL)。置き換えは、1文字ずつ調べて書き換える。","kotlin":"含むかは contains。置換は replace(元, 新)。区切りは split(\",\")。"},
+"why":{"python":"replace には「何を」「何に」の2つの引数が必要。","javascript":"JavaScript の文字列に contains はない。includes を使う。","c":"strstr には「全体の文字列」と「探す文字列」の2つが必要。","kotlin":"contain ではなく contains。1文字違うだけで別の名前になる。"}}
+=== python
+s = "apple,banana,cherry"
+print("banana" in s)
+print(s.replace(",", " / "))
+print(s.split(","))
+=== python.bug
+s = "apple,banana,cherry"
+print(s.replace(","))
+=== javascript
+const s = "apple,banana,cherry";
+console.log(s.includes("banana"));
+console.log(s.replaceAll(",", " / "));
+console.log(s.split(","));
+=== javascript.bug
+const s = "apple,banana,cherry";
+console.log(s.contains("banana"));
+=== c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char s[] = "apple,banana,cherry";
+    if (strstr(s, "banana") != NULL) {
+        printf("found banana\n");
+    }
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == ',') {
+            s[i] = ' ';
+        }
+    }
+    printf("%s\n", s);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char s[] = "apple,banana,cherry";
+    if (strstr("banana") != NULL) {
+        printf("found banana\n");
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val s = "apple,banana,cherry"
+    println(s.contains("banana"))
+    println(s.replace(",", " / "))
+    println(s.split(","))
+}
+=== kotlin.bug
+fun main() {
+    val s = "apple,banana,cherry"
+    println(s.contain("banana"))
+}
+=== kotlin.out
+true
+apple / banana / cherry
+[apple, banana, cherry]
+=== kotlin.bug.out
+main.kt:3:15: error: unresolved reference 'contain'.

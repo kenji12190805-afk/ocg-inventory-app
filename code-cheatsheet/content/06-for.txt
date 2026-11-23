@@ -1,0 +1,69 @@
+=== meta
+{"id":"for","category":"制御","title":"決まった回数くりかえす (for)","summary":"1から5まで順番に出して、合計も求める。","keywords":["for","繰り返し","くりかえし","ループ","loop","range","回数","反復","合計","sum","イテレーション"],
+"notes":{"python":"range(1, 6) は 1,2,3,4,5(最後の6は含まない)。中身は字下げ。","javascript":"for (開始; 続ける条件; 増やす処理) の3点セット。","c":"JavaScript と同じ3点セット。変数 i の型 int を書く。","kotlin":"1..5 は 1から5まで(5を含む)。for (i in 範囲) と書く。"},
+"why":{"python":"for の中身を字下げしていない。Python は字下げでブロックを表す。","javascript":"for の ( ) を閉じ忘れた。","c":"for の中は ; 区切り。, にしてしまうとエラー。","kotlin":"存在しない変数 j を使った。ループ変数は i。"}}
+=== python
+total = 0
+for i in range(1, 6):
+    total += i
+    print(i)
+print("合計:", total)
+=== python.bug
+for i in range(1, 6):
+print(i)
+=== javascript
+let total = 0;
+for (let i = 1; i <= 5; i++) {
+  total += i;
+  console.log(i);
+}
+console.log("合計:", total);
+=== javascript.bug
+for (let i = 1; i <= 5; i++ {
+  console.log(i);
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int total = 0;
+    for (int i = 1; i <= 5; i++) {
+        total += i;
+        printf("%d\n", i);
+    }
+    printf("total: %d\n", total);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    for (int i = 1, i <= 5; i++) {
+        printf("%d\n", i);
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    var total = 0
+    for (i in 1..5) {
+        total += i
+        println(i)
+    }
+    println("合計: $total")
+}
+=== kotlin.bug
+fun main() {
+    for (i in 1..5) {
+        println(j)
+    }
+}
+=== kotlin.out
+1
+2
+3
+4
+5
+合計: 15
+=== kotlin.bug.out
+main.kt:3:17: error: unresolved reference 'j'.

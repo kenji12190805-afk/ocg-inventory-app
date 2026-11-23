@@ -1,0 +1,22 @@
+{
+ "hello": true,
+ "variables": true,
+ "string": true,
+ "format": true,
+ "if": true,
+ "for": true,
+ "while": true,
+ "list": true,
+ "append": true,
+ "iterate": true,
+ "dict": true,
+ "function": true,
+ "class": true,
+ "exception": true,
+ "convert": true,
+ "math": true,
+ "sort": true,
+ "search": true,
+ "recursion": true,
+ "null": true
+}

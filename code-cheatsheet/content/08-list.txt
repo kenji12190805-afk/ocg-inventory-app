@@ -1,0 +1,58 @@
+=== meta
+{"id":"list","category":"データ","title":"リスト・配列を作って取り出す","summary":"複数の値をまとめて持つ。最初・最後の要素と、個数を調べる。","keywords":["リスト","list","配列","array","要素","index","インデックス","番号","添字","長さ","size","length","取り出す"],
+"notes":{"python":"リストは [ ] で作る。番号は0から。-1 で最後の要素。","javascript":"配列は [ ] で作る。番号は0から。at(-1) で最後の要素。","c":"配列は大きさ固定。個数は sizeof(配列) / sizeof(配列[0]) で計算する。","kotlin":"mutableListOf は変更できるリスト。番号は0から。"},
+"why":{"python":"3つしかないリストの [3] (4番目)を取ろうとした。番号は0〜2。","javascript":"範囲外を指定してもエラーにならず undefined が返る。気づきにくいので注意。","c":"配列は = で丸ごと入れ直せない(初期化のときだけ { } が使える)。","kotlin":"3つしかないリストの [3] (4番目)を取ろうとした。番号は0〜2。"}}
+=== python
+fruits = ["りんご", "みかん", "ぶどう"]
+print(fruits[0])
+print(fruits[-1])
+print(len(fruits))
+=== python.bug
+fruits = ["りんご", "みかん", "ぶどう"]
+print(fruits[3])
+=== javascript
+const fruits = ["りんご", "みかん", "ぶどう"];
+console.log(fruits[0]);
+console.log(fruits.at(-1));
+console.log(fruits.length);
+=== javascript.bug
+const fruits = ["りんご", "みかん", "ぶどう"];
+console.log(fruits[3]);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int scores[3] = {80, 65, 90};
+    int count = sizeof(scores) / sizeof(scores[0]);
+    printf("%d\n", scores[0]);
+    printf("%d\n", scores[count - 1]);
+    printf("%d\n", count);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int scores[3] = {80, 65, 90};
+    scores = {1, 2, 3};
+    return 0;
+}
+=== kotlin
+fun main() {
+    val fruits = mutableListOf("りんご", "みかん", "ぶどう")
+    println(fruits[0])
+    println(fruits.last())
+    println(fruits.size)
+}
+=== kotlin.bug
+fun main() {
+    val fruits = mutableListOf("りんご", "みかん", "ぶどう")
+    println(fruits[3])
+}
+=== kotlin.out
+りんご
+ぶどう
+3
+=== kotlin.bug.out
+Exception in thread "main" java.lang.IndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at ... (エラーが起きた場所の一覧が続く)

@@ -1,0 +1,78 @@
+=== meta
+{"id":"if","category":"制御","title":"条件で処理を分ける (if / else)","summary":"点数によって「合格(優)」「合格」「不合格」を出し分ける。","keywords":["if","else","elif","else if","条件","分岐","条件分岐","もし","比較","判定"],
+"notes":{"python":"かっこ不要。最後に : をつけ、中身は字下げ(インデント)で表す。else if は elif と書く。","javascript":"条件は ( ) で囲み、中身は { } で囲む。","c":"条件は ( ) で囲み、中身は { } で囲む。比較は == (= は代入!)。","kotlin":"if は「式」なので、結果を変数に入れられる。値として使うときは else が必須。"},
+"why":{"python":"if の行の最後に : が足りない。","javascript":"if の条件の ) を閉じ忘れた。","c":"if (score = 80) は比較(==)ではなく代入。条件が常に真になり、75点でも「優」になってしまう。","kotlin":"if を値として使うのに else がない。値が決まらない場合があるのでエラーになる。"}}
+=== python
+score = 75
+if score >= 80:
+    print("合格(優)")
+elif score >= 60:
+    print("合格")
+else:
+    print("不合格")
+=== python.bug
+score = 75
+if score >= 60
+    print("合格")
+=== javascript
+const score = 75;
+if (score >= 80) {
+  console.log("合格(優)");
+} else if (score >= 60) {
+  console.log("合格");
+} else {
+  console.log("不合格");
+}
+=== javascript.bug
+const score = 75;
+if (score >= 60 {
+  console.log("合格");
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int score = 75;
+    if (score >= 80) {
+        printf("pass (excellent)\n");
+    } else if (score >= 60) {
+        printf("pass\n");
+    } else {
+        printf("fail\n");
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int score = 75;
+    if (score = 80) {
+        printf("excellent\n");
+    } else {
+        printf("not excellent\n");
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val score = 75
+    val result = if (score >= 80) {
+        "合格(優)"
+    } else if (score >= 60) {
+        "合格"
+    } else {
+        "不合格"
+    }
+    println(result)
+}
+=== kotlin.bug
+fun main() {
+    val score = 75
+    val result = if (score >= 60) "合格"
+    println(result)
+}
+=== kotlin.out
+合格
+=== kotlin.bug.out
+main.kt:3:18: error: 'if' must have both main and 'else' branches if used as an expression.

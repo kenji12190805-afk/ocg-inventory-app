@@ -1,0 +1,84 @@
+=== meta
+{"id":"recursion","category":"関数とクラス","title":"自分自身を呼ぶ関数 (再帰・階乗)","summary":"5! = 5×4×3×2×1 を、関数が自分を呼ぶ形で計算する。","keywords":["再帰","recursion","階乗","factorial","自分自身","スタックオーバーフロー","stack overflow","フィボナッチ","再帰呼び出し"],
+"notes":{"python":"「n が1以下なら1」の終わり条件(基底条件)を必ず書く。","javascript":"「n が1以下なら1」の終わり条件(基底条件)を必ず書く。","c":"「n が1以下なら1」の終わり条件(基底条件)を必ず書く。","kotlin":"再帰する関数は、戻り値の型 : Int をはっきり書く。"},
+"why":{"python":"文字列 \"5\" と数値 1 は <= で比べられない。数値を渡す。","javascript":"終わり条件がなく、自分を呼び続けて呼び出しの深さが限界を超えた(スタックオーバーフロー)。","c":"終わり条件がなく、自分を呼び続けてメモリの限界を超えた(スタックオーバーフロー)。OS がプログラムを止める。","kotlin":"Int の引数に文字列(\"5\")は渡せない。"}}
+=== python
+def fact(n):
+    if n <= 1:
+        return 1
+    return n * fact(n - 1)
+
+print(fact(5))
+=== python.bug
+def fact(n):
+    if n <= 1:
+        return 1
+    return n * fact(n - 1)
+
+print(fact("5"))
+=== javascript
+function fact(n) {
+  if (n <= 1) {
+    return 1;
+  }
+  return n * fact(n - 1);
+}
+
+console.log(fact(5));
+=== javascript.bug
+function fact(n) {
+  return n * fact(n - 1);
+}
+
+console.log(fact(5));
+=== c
+#include <stdio.h>
+
+int fact(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * fact(n - 1);
+}
+
+int main(void) {
+    printf("%d\n", fact(5));
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int fact(int n) {
+    return n * fact(n - 1);
+}
+
+int main(void) {
+    printf("%d\n", fact(5));
+    return 0;
+}
+=== kotlin
+fun fact(n: Int): Int {
+    if (n <= 1) {
+        return 1
+    }
+    return n * fact(n - 1)
+}
+
+fun main() {
+    println(fact(5))
+}
+=== kotlin.bug
+fun fact(n: Int): Int {
+    if (n <= 1) {
+        return 1
+    }
+    return n * fact(n - 1)
+}
+
+fun main() {
+    println(fact("5"))
+}
+=== kotlin.out
+120
+=== kotlin.bug.out
+main.kt:9:18: error: argument type mismatch: actual type is 'String', but 'Int' was expected.

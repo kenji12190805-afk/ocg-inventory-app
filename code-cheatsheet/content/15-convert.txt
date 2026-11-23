@@ -1,0 +1,56 @@
+=== meta
+{"id":"convert","category":"基本","title":"文字列と数値を変換する","summary":"\"42\" という文字を数値の42にして計算する。数値を文字にして「円」をつなげる。","keywords":["変換","型変換","キャスト","int","float","toInt","parseInt","Number","atoi","atof","str","String","toString","数値","文字列","数字"],
+"notes":{"python":"int(\"42\") や float(\"2.5\") で文字→数値、str(3.5) で数値→文字。","javascript":"Number(\"42\") や parseFloat(\"2.5\")。\"42\" + 1 は \"421\" になるので注意。","c":"stdlib.h の atoi(文字→整数)・atof(文字→小数)。必ず #include <stdlib.h> を書く。","kotlin":"\"42\".toInt() や \"2.5\".toDouble()。型は自動では変わらない。"},
+"why":{"python":"\"4.2\" のような小数の文字は int() では変換できない。float() を使う。","javascript":"+ は文字列があると「つなげる」になる。\"42\" + 1 は 43 ではなく \"421\"。エラーにならないので注意。","c":"#include <stdlib.h> を書かずに atoi を使った。C は宣言のない関数を使うと警告が出る(新しいコンパイラではエラー)。","kotlin":"Int として宣言した変数に文字列(\"42\")は入れられない。toInt() で変換する。"}}
+=== python
+n = int("42")
+print(n + 1)
+print(str(3.5) + "円")
+print(float("2.5") * 2)
+=== python.bug
+n = int("4.2")
+print(n)
+=== javascript
+const n = Number("42");
+console.log(n + 1);
+console.log(String(3.5) + "円");
+console.log(parseFloat("2.5") * 2);
+=== javascript.bug
+console.log("42" + 1);
+=== c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    int n = atoi("42");
+    double d = atof("2.5");
+    printf("%d\n", n + 1);
+    printf("%.1f\n", d * 2);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int n = atoi("42");
+    printf("%d\n", n + 1);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val n = "42".toInt()
+    println(n + 1)
+    println(3.5.toString() + "円")
+    println("2.5".toDouble() * 2)
+}
+=== kotlin.bug
+fun main() {
+    val n: Int = "42"
+    println(n)
+}
+=== kotlin.out
+43
+3.5円
+5.0
+=== kotlin.bug.out
+main.kt:2:18: error: initializer type mismatch: expected 'Int', actual 'String'.

@@ -1,0 +1,38 @@
+=== meta
+{"id":"hello","category":"基本","title":"画面に文字を出す","summary":"プログラムの結果を画面に表示する、いちばん最初の一歩。","keywords":["print","println","printf","console.log","出力","表示","はじめて","hello world","ハローワールド","画面"],
+"notes":{"python":"print() は最後に自動で改行してくれる。","javascript":"ブラウザのコンソールや Node.js では console.log を使う。","c":"printf は改行を自分で書く(\\n)。main 関数が入口になる。","kotlin":"println は改行つき、print は改行なし。main 関数が入口になる。"},
+"why":{"python":"文字列の閉じ忘れ(\" が足りない)。","javascript":"かっこの閉じ忘れ。","c":"行末の ; を忘れた。C は文の終わりに必ず ; が必要。","kotlin":"関数名のタイプミス(println → printn)。"}}
+=== python
+print("Hello, World!")
+=== python.bug
+print("Hello, World!)
+=== javascript
+console.log("Hello, World!");
+=== javascript.bug
+console.log("Hello, World!";
+=== c
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, World!\n");
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    printf("Hello, World!\n")
+    return 0;
+}
+=== kotlin
+fun main() {
+    println("Hello, World!")
+}
+=== kotlin.bug
+fun main() {
+    printn("Hello, World!")
+}
+=== kotlin.out
+Hello, World!
+=== kotlin.bug.out
+main.kt:2:5: error: unresolved reference 'printn'.

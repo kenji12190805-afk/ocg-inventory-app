@@ -1,0 +1,49 @@
+=== meta
+{"id":"format","category":"基本","title":"変数を文字列に埋め込む","summary":"「ケンジさんの点数は85.5点です」のように、変数の値を文章の中に入れる。","keywords":["フォーマット","format","埋め込む","f文字列","f-string","テンプレート","テンプレートリテラル","printf","補間","文字列の中に変数"],
+"notes":{"python":"f\"...{変数}...\" の f を忘れない。{score:.1f} で小数1桁。","javascript":"バッククォート ` で囲むと ${変数} が使える(シングルクォート ' では使えない)。","c":"printf の %s(文字列) %d(整数) %f(小数) に値を順に渡す。","kotlin":"\"...$変数...\" や \"...${式}...\" で埋め込める。"},
+"why":{"python":"先頭の f を忘れると {score} がそのまま表示される(エラーにならないので気づきにくい)。","javascript":"' や \" で囲むと ${score} はただの文字。` で囲む必要がある。エラーにならず気づきにくい。","c":"%s に数値(42)を渡した。%s は文字列の場所(アドレス)を期待するので、実行時に落ちる。","kotlin":"$ を忘れて {score} だけ書くと、そのまま文字として表示される。"}}
+=== python
+name = "ケンジ"
+score = 85.5
+print(f"{name}さんの点数は{score:.1f}点です")
+=== python.bug
+score = 85.5
+print("点数は{score}点")
+=== javascript
+const name = "ケンジ";
+const score = 85.5;
+console.log(`${name}さんの点数は${score.toFixed(1)}点です`);
+=== javascript.bug
+const score = 85.5;
+console.log('点数は${score}点');
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char name[] = "Kenji";
+    double score = 85.5;
+    printf("%s's score: %.1f points\n", name, score);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    printf("%s\n", 42);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val name = "ケンジ"
+    val score = 85.5
+    println("${name}さんの点数は${score}点です")
+}
+=== kotlin.bug
+fun main() {
+    val score = 85.5
+    println("点数は{score}点")
+}
+=== kotlin.out
+ケンジさんの点数は85.5点です
+=== kotlin.bug.out
+点数は{score}点

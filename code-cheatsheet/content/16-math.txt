@@ -1,0 +1,56 @@
+=== meta
+{"id":"math","category":"基本","title":"計算する (足し算・割り算・あまり)","summary":"四則演算、割り算の商とあまり、べき乗。整数どうしの割り算の落とし穴。","keywords":["計算","算術","演算","四則","足し算","引き算","掛け算","割り算","余り","あまり","剰余","%","べき乗","累乗","整数","小数","割る"],
+"notes":{"python":"/ は小数の割り算、// は切り捨ての割り算(商)、% はあまり、** はべき乗。","javascript":"/ は小数の割り算。商を出すなら Math.floor(7 / 2)。** はべき乗。","c":"整数どうしの割り算は小数が切り捨てられる(7/2 は 3)。小数にしたいなら片方を 2.0 のように小数にする。","kotlin":"整数どうしの割り算は切り捨て(7/2 は 3)。小数にしたいなら 7 / 2.0 のようにする。"},
+"why":{"python":"0で割るとエラー。割る数が0にならないか確認する。","javascript":"0で割ってもエラーにならず Infinity(無限大)になる。","c":"% (あまり)は整数どうしでしか使えない。小数には使えない。","kotlin":"7 / 2 は整数どうしの計算で結果は Int。Double の変数にはそのまま入れられない。"}}
+=== python
+print(7 + 3, 7 - 3, 7 * 3)
+print(7 / 2)
+print(7 // 2)
+print(7 % 2)
+print(2 ** 10)
+=== python.bug
+print(7 / 0)
+=== javascript
+console.log(7 + 3, 7 - 3, 7 * 3);
+console.log(7 / 2);
+console.log(Math.floor(7 / 2));
+console.log(7 % 2);
+console.log(2 ** 10);
+=== javascript.bug
+console.log(7 / 0);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    printf("%d %d %d\n", 7 + 3, 7 - 3, 7 * 3);
+    printf("%d\n", 7 / 2);
+    printf("%.1f\n", 7 / 2.0);
+    printf("%d\n", 7 % 2);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    printf("%d\n", 7 % 2.0);
+    return 0;
+}
+=== kotlin
+fun main() {
+    println("${7 + 3} ${7 - 3} ${7 * 3}")
+    println(7 / 2)
+    println(7 / 2.0)
+    println(7 % 2)
+}
+=== kotlin.bug
+fun main() {
+    val x: Double = 7 / 2
+    println(x)
+}
+=== kotlin.out
+10 4 21
+3
+3.5
+1
+=== kotlin.bug.out
+main.kt:2:21: error: initializer type mismatch: expected 'Double', actual 'Int'.

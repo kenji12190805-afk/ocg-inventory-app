@@ -1,0 +1,62 @@
+=== meta
+{"id":"string","category":"基本","title":"文字列の長さ・つなげる・大文字にする","summary":"文字列の基本操作。長さを調べる、2つをつなげる、大文字に変える。","keywords":["文字列","string","length","len","strlen","連結","つなげる","結合","大文字","upper","uppercase","toUpperCase","文字数"],
+"notes":{"python":"文字列と数値は + でつなげられない。数値は str() で文字列にする。","javascript":"長さは length(かっこなしのプロパティ)。","c":"C には文字列型がなく、char の配列で表す。長さは strlen、連結は strcat。配列の大きさに余裕を持たせる。","kotlin":"長さは length、大文字化は uppercase()。+ でつなげられる。"},
+"why":{"python":"文字列に数値を + でつなげようとした。","javascript":"JavaScript の文字列に size() はない。長さは length。","c":"C の配列は = で丸ごと入れ直せない。strcpy を使う。","kotlin":"Kotlin の文字列に size はない。長さは length。"}}
+=== python
+s = "Hello"
+print(len(s))
+print(s + " World")
+print(s.upper())
+=== python.bug
+print("Age: " + 30)
+=== javascript
+const s = "Hello";
+console.log(s.length);
+console.log(s + " World");
+console.log(s.toUpperCase());
+=== javascript.bug
+const s = "Hello";
+console.log(s.size());
+=== c
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+int main(void) {
+    char s[32] = "Hello";
+    printf("%d\n", (int)strlen(s));
+    strcat(s, " World");
+    printf("%s\n", s);
+    for (int i = 0; s[i] != '\0'; i++) {
+        s[i] = toupper(s[i]);
+    }
+    printf("%s\n", s);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char s[32] = "Hello";
+    s = "World";
+    printf("%s\n", s);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val s = "Hello"
+    println(s.length)
+    println(s + " World")
+    println(s.uppercase())
+}
+=== kotlin.bug
+fun main() {
+    val s = "Hello"
+    println(s.size)
+}
+=== kotlin.out
+5
+Hello World
+HELLO
+=== kotlin.bug.out
+main.kt:3:15: error: unresolved reference 'size'.

@@ -1,0 +1,68 @@
+=== meta
+{"id":"while","category":"制御","title":"条件を満たす間くりかえす (while)","summary":"100を超えるまで、1から2倍を繰り返す。回数が決まっていないときに使う。","keywords":["while","繰り返し","ループ","条件","間","do while","無限ループ","break"],
+"notes":{"python":"while 条件: のあと字下げ。条件が変わらないと無限ループになるので注意。","javascript":"while (条件) { ... }。","c":"while (条件) { ... }。","kotlin":"while (条件) { ... }。var(変えられる変数)を使う。"},
+"why":{"python":"数値(n)と文字列(\"100\")は < で比べられない。","javascript":"const の変数は途中で変えられない。ループで変える値は let を使う。","c":"while の条件は ( ) で囲む必要がある。","kotlin":"val の変数は途中で変えられない。ループで変える値は var を使う。"}}
+=== python
+n = 1
+while n < 100:
+    n *= 2
+print(n)
+=== python.bug
+n = 1
+while n < "100":
+    n *= 2
+print(n)
+=== javascript
+let n = 1;
+while (n < 100) {
+  n *= 2;
+}
+console.log(n);
+=== javascript.bug
+const n = 1;
+while (n < 100) {
+  n *= 2;
+}
+console.log(n);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int n = 1;
+    while (n < 100) {
+        n *= 2;
+    }
+    printf("%d\n", n);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int n = 1;
+    while n < 100 {
+        n *= 2;
+    }
+    printf("%d\n", n);
+    return 0;
+}
+=== kotlin
+fun main() {
+    var n = 1
+    while (n < 100) {
+        n *= 2
+    }
+    println(n)
+}
+=== kotlin.bug
+fun main() {
+    val n = 1
+    while (n < 100) {
+        n *= 2
+    }
+    println(n)
+}
+=== kotlin.out
+128
+=== kotlin.bug.out
+main.kt:4:9: error: val cannot be reassigned.

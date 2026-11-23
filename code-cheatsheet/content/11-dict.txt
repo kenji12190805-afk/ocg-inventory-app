@@ -1,0 +1,81 @@
+=== meta
+{"id":"dict","category":"データ","title":"名前と値をセットで持つ (辞書・Map)","summary":"「ケンジ→30」のように、キーから値を引く入れ物。追加・取り出し・全部の取り出し。","keywords":["辞書","dict","dictionary","map","連想配列","ハッシュ","キー","key","value","オブジェクト","ペア","対応"],
+"notes":{"python":"辞書は { キー: 値 }。無いキーでもエラーにしたくないときは get(キー, 代わりの値)。","javascript":"オブジェクト { キー: 値 } で辞書の代わりになる。本格的に使うなら Map もある。","c":"C には辞書がない。構造体(struct)の配列を作って、探すときは 1つずつ調べる。","kotlin":"mutableMapOf(キー to 値)。無いキーで取り出すと null が返るので ?: で代わりの値を決める。"},
+"why":{"python":"辞書にないキーを [ ] で取り出すと KeyError。安全に取るなら get()。","javascript":"無いキーは undefined。undefined の中身(.length)を読もうとして落ちた。","c":"C の配列の [ ] には番号(整数)しか使えない。文字列でキーを引く仕組みはない。","kotlin":"Map の取り出し結果は「無いかもしれない(Int?)」。Int にはそのまま入れられない。"}}
+=== python
+ages = {"ケンジ": 30, "ハナ": 25}
+ages["タロウ"] = 20
+print(ages["ケンジ"])
+for name, age in ages.items():
+    print(name, age)
+print(ages.get("ゴロウ", "いない"))
+=== python.bug
+ages = {"ケンジ": 30, "ハナ": 25}
+print(ages["ゴロウ"])
+=== javascript
+const ages = { ケンジ: 30, ハナ: 25 };
+ages["タロウ"] = 20;
+console.log(ages["ケンジ"]);
+for (const [name, age] of Object.entries(ages)) {
+  console.log(name, age);
+}
+console.log(ages["ゴロウ"] ?? "いない");
+=== javascript.bug
+const ages = { ケンジ: 30, ハナ: 25 };
+console.log(ages["ゴロウ"].length);
+=== c
+#include <stdio.h>
+#include <string.h>
+
+struct Entry {
+    char name[16];
+    int age;
+};
+
+int main(void) {
+    struct Entry ages[3];
+    strcpy(ages[0].name, "Kenji");
+    ages[0].age = 30;
+    strcpy(ages[1].name, "Hana");
+    ages[1].age = 25;
+    strcpy(ages[2].name, "Taro");
+    ages[2].age = 20;
+    for (int i = 0; i < 3; i++) {
+        if (strcmp(ages[i].name, "Hana") == 0) {
+            printf("%s is %d\n", ages[i].name, ages[i].age);
+        }
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int ages[3] = {30, 25, 20};
+    printf("%d\n", ages["Hana"]);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val ages = mutableMapOf("ケンジ" to 30, "ハナ" to 25)
+    ages["タロウ"] = 20
+    println(ages["ケンジ"])
+    for ((name, age) in ages) {
+        println("$name $age")
+    }
+    println(ages["ゴロウ"] ?: "いない")
+}
+=== kotlin.bug
+fun main() {
+    val ages = mutableMapOf("ケンジ" to 30)
+    val age: Int = ages["ゴロウ"]
+    println(age)
+}
+=== kotlin.out
+30
+ケンジ 30
+ハナ 25
+タロウ 20
+いない
+=== kotlin.bug.out
+main.kt:3:20: error: initializer type mismatch: expected 'Int', actual 'Int?'.

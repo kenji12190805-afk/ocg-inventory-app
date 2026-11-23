@@ -1,0 +1,76 @@
+=== meta
+{"id":"sort","category":"データ","title":"並べ替える (ソート)","summary":"数値のリストを小さい順・大きい順に並べる。","keywords":["ソート","sort","sorted","並べ替え","順番","昇順","降順","小さい順","大きい順","reverse","整列","バブルソート"],
+"notes":{"python":"sorted(リスト) は新しいリストを返し、リスト.sort() は元のリストを並べ替える。reverse=True で大きい順。","javascript":"sort() は何も指定しないと「文字」として並べる(10 が 2 より前になる)。数値は (a, b) => a - b を渡す。","c":"標準では qsort もあるが、ここでは仕組みがわかるバブルソートを自分で書く。","kotlin":"sorted() は新しいリストを返す。大きい順は sortedDescending()。"},
+"why":{"python":"sort() の reverse は「名前つき引数」。sort(True) のように位置では渡せない。reverse=True と書く。","javascript":"sort() は数値も文字として比べるので [10, 2, 5, 9] になる。エラーにならないので注意。","c":"入れ替え(swap)に一時変数を使わず上書きしたので、値が消えてしまう。","kotlin":"sorted は関数。かっこ () を忘れると「関数を呼べ」と怒られる。"}}
+=== python
+nums = [5, 2, 9, 1]
+print(sorted(nums))
+nums.sort(reverse=True)
+print(nums)
+=== python.bug
+nums = [5, 2, 9, 1]
+nums.sort(True)
+=== javascript
+const nums = [5, 2, 9, 10];
+const asc = [...nums].sort((a, b) => a - b);
+console.log(asc);
+console.log([...nums].sort((a, b) => b - a));
+=== javascript.bug
+const nums = [5, 2, 9, 10];
+nums.sort();
+console.log(nums);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int a[4] = {5, 2, 9, 1};
+    int n = 4;
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - 1 - i; j++) {
+            if (a[j] > a[j + 1]) {
+                int tmp = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = tmp;
+            }
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        printf("%d\n", a[i]);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int a[4] = {5, 2, 9, 1};
+    int n = 4;
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - 1 - i; j++) {
+            if (a[j] > a[j + 1]) {
+                a[j] = a[j + 1];
+                a[j + 1] = a[j];
+            }
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        printf("%d\n", a[i]);
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val nums = listOf(5, 2, 9, 1)
+    println(nums.sorted())
+    println(nums.sortedDescending())
+}
+=== kotlin.bug
+fun main() {
+    val nums = listOf(5, 2, 9, 1)
+    println(nums.sorted)
+}
+=== kotlin.out
+[1, 2, 5, 9]
+[9, 5, 2, 1]
+=== kotlin.bug.out
+main.kt:3:18: error: function invocation 'sorted()' expected.

@@ -1,0 +1,57 @@
+=== meta
+{"id":"append","category":"データ","title":"リストに追加・削除する","summary":"後ろに要素を足す、途中の要素を消す。","keywords":["追加","append","push","add","削除","remove","splice","pop","要素を足す","リスト","配列","ミュータブル"],
+"notes":{"python":"追加は append、値を指定して消すのは remove。","javascript":"追加は push、場所を指定して消すのは splice(位置, 個数)。","c":"C の配列は大きさ固定。余裕を持った大きさで作り、要素数(count)を自分で数える。","kotlin":"追加・削除ができるのは mutableListOf。listOf は読み取り専用。"},
+"why":{"python":"Python のリストに add() はない。追加は append()。","javascript":"JavaScript の配列に append() はない。追加は push()。","c":"C の配列にメソッド(.push など)はない。C は「関数」と「配列の番号」で操作する。","kotlin":"listOf で作ったリストは読み取り専用で、add() がない。変更したいなら mutableListOf を使う。"}}
+=== python
+nums = [1, 2, 3]
+nums.append(4)
+nums.remove(2)
+print(nums)
+=== python.bug
+nums = [1, 2, 3]
+nums.add(4)
+=== javascript
+const nums = [1, 2, 3];
+nums.push(4);
+nums.splice(1, 1);
+console.log(nums);
+=== javascript.bug
+const nums = [1, 2, 3];
+nums.append(4);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int nums[10] = {1, 2, 3};
+    int count = 3;
+    nums[count] = 4;
+    count++;
+    for (int i = 0; i < count; i++) {
+        printf("%d\n", nums[i]);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int nums[10] = {1, 2, 3};
+    nums.push(4);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val nums = mutableListOf(1, 2, 3)
+    nums.add(4)
+    nums.removeAt(1)
+    println(nums)
+}
+=== kotlin.bug
+fun main() {
+    val nums = listOf(1, 2, 3)
+    nums.add(4)
+}
+=== kotlin.out
+[1, 3, 4]
+=== kotlin.bug.out
+main.kt:3:10: error: unresolved reference 'add'.

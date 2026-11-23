@@ -1,0 +1,73 @@
+=== meta
+{"id":"iterate","category":"データ","title":"リストの中身を順番に取り出す","summary":"要素を1つずつ取り出して処理する。番号つきで取り出す方法も。","keywords":["for","for in","for of","forEach","enumerate","withIndex","反復","イテレーション","全部","ループ","リスト","配列","順番に"],
+"notes":{"python":"for 要素 in リスト:。番号も欲しいときは enumerate()。","javascript":"配列の要素は for...of。for...in は「番号(キー)」が出るので注意。","c":"要素数を自分で求めて、番号 i でぐるぐる回す。","kotlin":"for (要素 in リスト)。番号も欲しいときは withIndex()。"},
+"why":{"python":"数値(5)は「くりかえせない」ので for で取り出せない。リストや range(5) を渡す。","javascript":"for...in は「要素」ではなく「番号」を取り出す。エラーにならないので間違えやすい。要素なら for...of。","c":"C に「for 〜 in」はない。番号 i を使った for の3点セットで回す。(C のエラーは連鎖して増えるので、まず一番上の1つだけ読む。)","kotlin":"in のあとに、存在しない名前(fruit)を書いた。リストの名前を書く。"}}
+=== python
+fruits = ["りんご", "みかん", "ぶどう"]
+for fruit in fruits:
+    print(fruit)
+for i, fruit in enumerate(fruits, start=1):
+    print(i, fruit)
+=== python.bug
+for i in 5:
+    print(i)
+=== javascript
+const fruits = ["りんご", "みかん", "ぶどう"];
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+fruits.forEach((fruit, i) => {
+  console.log(i + 1, fruit);
+});
+=== javascript.bug
+const fruits = ["りんご", "みかん", "ぶどう"];
+for (const fruit in fruits) {
+  console.log(fruit);
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char *fruits[] = {"apple", "orange", "grape"};
+    int n = sizeof(fruits) / sizeof(fruits[0]);
+    for (int i = 0; i < n; i++) {
+        printf("%d %s\n", i + 1, fruits[i]);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char *fruits[] = {"apple", "orange", "grape"};
+    for (fruit in fruits) {
+        printf("%s\n", fruit);
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val fruits = listOf("りんご", "みかん", "ぶどう")
+    for (fruit in fruits) {
+        println(fruit)
+    }
+    for ((i, fruit) in fruits.withIndex()) {
+        println("${i + 1} $fruit")
+    }
+}
+=== kotlin.bug
+fun main() {
+    val fruits = listOf("りんご", "みかん")
+    for (fruit in fruit) {
+        println(fruit)
+    }
+}
+=== kotlin.out
+りんご
+みかん
+ぶどう
+1 りんご
+2 みかん
+3 ぶどう
+=== kotlin.bug.out
+main.kt:3:19: error: unresolved reference 'fruit'.
