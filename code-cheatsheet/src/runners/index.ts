@@ -7,7 +7,7 @@ const TIMEOUT_MS = 8000;
 const TIMEOUT_TEXT = '8秒たっても終わらなかったので止めました。無限ループになっていないか確認してね。';
 
 /** 使い捨てWorkerでコードを実行する(終わらなければ強制終了) */
-function oneShot(make: () => Worker, code: string): Promise<RunResult> {
+function oneShot(make: () => Worker, code: string, mode: 'run' | 'check' = 'run'): Promise<RunResult> {
   return new Promise((resolve) => {
     const t0 = performance.now();
     const w = make();
@@ -19,7 +19,7 @@ function oneShot(make: () => Worker, code: string): Promise<RunResult> {
     const timer = setTimeout(() => finish({ text: TIMEOUT_TEXT, failed: true }), TIMEOUT_MS);
     w.onmessage = (e) => finish(e.data);
     w.onerror = (e) => finish({ text: `(実行エンジンのエラー) ${e.message}`, failed: true });
-    w.postMessage({ code });
+    w.postMessage({ code, mode });
   });
 }
 
@@ -71,7 +71,7 @@ export function preloadPython(): Promise<void> {
   return pyReady;
 }
 
-async function runPython(code: string): Promise<RunResult> {
+async function callPython(type: 'run' | 'check', code: string): Promise<RunResult> {
   const t0 = performance.now();
   try {
     await preloadPython();
@@ -90,14 +90,14 @@ async function runPython(code: string): Promise<RunResult> {
       clearTimeout(timer);
       resolve({ text: e.data.text || '(出力なし)', failed: e.data.failed, ms: performance.now() - t1 });
     };
-    w.postMessage({ type: 'run', code });
+    w.postMessage({ type, code });
   });
 }
 
 export function run(lang: Lang, code: string): Promise<RunResult> {
   switch (lang) {
     case 'python':
-      return runPython(code);
+      return callPython('run', code);
     case 'javascript':
       return oneShot(() => new Worker(new URL('./js.worker.ts', import.meta.url), { type: 'module' }), code);
     case 'c':
@@ -106,3 +106,11 @@ export function run(lang: Lang, code: string): Promise<RunResult> {
       return runKotlin(code);
   }
 }
+
+/** 実行せずに、文法だけを調べる(Python と JavaScript だけ) */
+export function check(lang: Lang, code: string): Promise<RunResult> {
+  if (lang === 'python') return callPython('check', code);
+  if (lang === 'javascript') return oneShot(() => new Worker(new URL('./js.worker.ts', import.meta.url), { type: 'module' }), code, 'check');
+  return Promise.resolve({ text: 'この言語は文法チェックだけはできません', failed: false, ms: 0 });
+}
+export const canCheck = (lang: Lang) => lang === 'python' || lang === 'javascript';

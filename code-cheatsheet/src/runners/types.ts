@@ -7,4 +7,6 @@ export interface RunResult {
   failed: boolean;
   /** 実行にかかった時間(ミリ秒) */
   ms: number;
+  /** JavaScript のエラーが出た行(1始まり) */
+  line?: number;
 }

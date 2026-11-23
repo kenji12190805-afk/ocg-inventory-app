@@ -3,6 +3,15 @@
 export const PY_WRAPPER = `
 import sys, traceback, linecache
 
+def __check_user_code(src):
+    linecache.cache["main.py"] = (len(src), None, src.splitlines(True), "main.py")
+    try:
+        compile(src, "main.py", "exec")
+        return True
+    except BaseException as e:
+        traceback.print_exception(type(e), e, None)
+        return False
+
 def __run_user_code(src):
     linecache.cache["main.py"] = (len(src), None, src.splitlines(True), "main.py")
     try:
@@ -33,4 +42,12 @@ export function runPython(pyodide, code) {
   pyodide.setStderr({ batched: (s) => (err += s + '\n') });
   pyodide.globals.get('__run_user_code')(code);
   return { out: out.replace(/\n$/, ''), error: err.replace(/\n$/, '') };
+}
+
+/** 実行せずに、文法だけを調べる */
+export function checkPython(pyodide, code) {
+  let err = '';
+  pyodide.setStderr({ batched: (s) => (err += s + '\n') });
+  pyodide.globals.get('__check_user_code')(code);
+  return { out: '', error: err.replace(/\n$/, '') };
 }

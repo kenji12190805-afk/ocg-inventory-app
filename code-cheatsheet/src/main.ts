@@ -4,52 +4,13 @@ import { TOPICS, topicById, CATEGORIES, LANG_ORDER, LANG_LABEL, LANG_ENGINE, typ
 import { search } from './search';
 import { createEditor, type Editor } from './editor';
 import { run, preloadPython, onPythonStatus, getPythonStatus, type Lang, type RunResult } from './runners';
-
-// ---------- 小さな部品 ----------
-type Child = Node | string | null | false | undefined;
-function h<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, any> | null = null, ...children: Child[]): HTMLElementTagNameMap[K] {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs ?? {})) {
-    if (v === false || v == null) continue;
-    if (k.startsWith('on') && typeof v === 'function') (el as any)[k] = v;
-    else if (k === 'class') el.className = v;
-    else if (k === 'value' || k === 'disabled' || k === 'checked') (el as any)[k] = v;
-    else el.setAttribute(k, v === true ? '' : String(v));
-  }
-  for (const c of children) if (c !== null && c !== false && c !== undefined) el.append(c);
-  return el;
-}
+import { h, toast, store, onDispose, disposeAll, netBadge, copyText } from './ui';
+import { renderEditorPage } from './editorPage';
+import { diagnose, type Diagnosed } from './errors';
+import { verdictCard } from './verdict';
+import { buildMessage } from './claude';
 
 const app = document.getElementById('app')!;
-let disposers: (() => void)[] = [];
-const dispose = () => {
-  disposers.forEach((f) => f());
-  disposers = [];
-};
-
-function toast(msg: string) {
-  const t = h('div', { class: 'toast', role: 'status' }, msg);
-  document.body.append(t);
-  setTimeout(() => t.remove(), 2400);
-}
-
-const store = {
-  get(k: string): string | null {
-    try {
-      return localStorage.getItem(k);
-    } catch {
-      return null;
-    }
-  },
-  set(k: string, v: string | null) {
-    try {
-      if (v === null) localStorage.removeItem(k);
-      else localStorage.setItem(k, v);
-    } catch {
-      /* 保存できなくても動く */
-    }
-  },
-};
 
 // ---------- 状態 ----------
 const isLang = (s: string | null): s is Lang => !!s && (LANG_ORDER as string[]).includes(s);
@@ -62,9 +23,14 @@ let query = '';
 const edits = new Map<string, string>();
 
 type Mode = 'good' | 'bug';
-type Route = { name: 'home' } | { name: 'topic'; id: string; lang: Lang; mode: Mode };
+type Route = { name: 'home' } | { name: 'edit'; lang: Lang } | { name: 'topic'; id: string; lang: Lang; mode: Mode };
 
 function parseHash(): Route {
+  const e = /^#\/edit(?:\?(.*))?$/.exec(location.hash);
+  if (e) {
+    const l = new URLSearchParams(e[1] ?? '').get('l');
+    return { name: 'edit', lang: isLang(l) ? l : preferred ?? 'python' };
+  }
   const m = /^#\/t\/([\w-]+)(?:\?(.*))?$/.exec(location.hash);
   if (!m) return { name: 'home' };
   const topic = topicById(m[1]);
@@ -86,23 +52,6 @@ function go(hash: string, replace = false) {
 }
 
 // ---------- 共通の枠 ----------
-let online = navigator.onLine;
-function netBadge(): HTMLElement {
-  const el = h('span', { class: `net${online ? '' : ' off'}`, role: 'status' }, online ? 'オンライン' : 'オフライン');
-  const update = () => {
-    online = navigator.onLine;
-    el.textContent = online ? 'オンライン' : 'オフライン';
-    el.classList.toggle('off', !online);
-  };
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
-  disposers.push(() => {
-    window.removeEventListener('online', update);
-    window.removeEventListener('offline', update);
-  });
-  return el;
-}
-
 function langChips(onPick: () => void): HTMLElement {
   const wrap = h('div', { class: 'chips', role: 'group', 'aria-label': '言語を選ぶ' });
   const defs: [Lang | null, string][] = [[null, 'すべて'], ...LANG_ORDER.map((l) => [l, LANG_LABEL[l]] as [Lang, string])];
@@ -191,7 +140,7 @@ function renderHome() {
       h(
         'div',
         { class: 'wrap' },
-        h('div', { class: 'brand' }, h('h1', null, 'コード辞典', h('small', null, 'Python / JS / C / Kotlin')), netBadge()),
+        h('div', { class: 'brand' }, h('h1', null, 'コード辞典', h('small', null, 'Python / JS / C / Kotlin')), h('div', { class: 'brand-r' }, h('a', { class: 'edit-link', href: `#/edit?l=${preferred ?? 'python'}` }, '✏️ エディタ'), netBadge())),
         h('div', { class: 'search' }, h('span', { class: 'ico', 'aria-hidden': 'true' }, '🔍'), input, clear),
         langChips(() => buildList()),
       ),
@@ -226,6 +175,7 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
   const recorded: Outcome | undefined = mode === 'bug' ? v.bugOut : v.out;
   const key = `${topic.id}:${lang}:${mode}`;
   let live: RunResult | null = null;
+  let diag: Diagnosed | null = null;
   let running = false;
 
   // タブ・モード切り替え
@@ -255,6 +205,7 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
   const runBtn = h('button', { class: 'btn primary' });
   const resetBtn = h('button', { class: 'btn', onclick: () => (editor.setText(original), edits.delete(key)) }, '↺ 元に戻す');
   const copyBtn = h('button', { class: 'btn', onclick: copy }, '⧉ コピー');
+  const askBtn = h('button', { class: 'btn', onclick: copyForClaude }, '📋 Claudeに送る用');
   const pyStatus = () => getPythonStatus();
 
   const dirty = () => editor.getText() !== original;
@@ -262,12 +213,12 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
   function refresh() {
     // 実行ボタン
     const busy = running || (lang === 'python' && pyStatus() === 'loading' && running);
-    runBtn.disabled = busy || (lang === 'kotlin' && !online);
+    runBtn.disabled = busy || (lang === 'kotlin' && !navigator.onLine);
     runBtn.replaceChildren();
     if (running) {
       runBtn.append(h('span', { class: 'spin' }), lang === 'python' && pyStatus() === 'loading' ? 'Python を準備中…(初回だけ数秒)' : '実行中…');
     } else if (lang === 'kotlin') {
-      runBtn.append(online ? '▶ ネットで実行' : 'オフラインでは実行できないよ');
+      runBtn.append(navigator.onLine ? '▶ ネットで実行' : 'オフラインでは実行できないよ');
     } else {
       runBtn.append('▶ スマホの中で実行');
     }
@@ -275,6 +226,7 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
     // 結果
     resultHost.replaceChildren();
     if (live) {
+      if (diag) resultHost.append(verdictCard(diag));
       resultHost.append(...outcomeBlock('いま実行した結果', { text: live.text, failed: live.failed }, live.ms));
       // C は簡易エンジンなので、本物の gcc の結果も並べて見せる(エラーの出方がちがうことがあるため)
       if (lang === 'c' && recorded && !dirty()) resultHost.append(...outcomeBlock(`記録された結果 — ${LANG_ENGINE[lang]}`, recorded));
@@ -290,9 +242,10 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
     if (t === original) edits.delete(key);
     else edits.set(key, t);
     live = null;
+    diag = null;
     refresh();
   });
-  disposers.push(() => editor.destroy());
+  onDispose(() => editor.destroy());
 
   async function doRun() {
     if (running) return;
@@ -301,12 +254,19 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
     refresh();
     try {
       live = await run(lang, editor.getText());
+      diag = diagnose(lang, live.text, live.failed, live.line ? [live.line] : []);
+      editor.markLines(diag.lines);
     } finally {
       running = false;
       refresh();
     }
   }
   runBtn.onclick = doRun;
+
+  async function copyForClaude() {
+    const msg = buildMessage({ lang, code: editor.getText(), note: topic.title, ask: live?.failed ? 'fix' : 'explain', withResult: !!live, result: live ?? undefined, diagnosis: diag ?? undefined });
+    toast((await copyText(msg)) ? 'Claude用にコピーしたよ' : 'コピーできなかったよ');
+  }
 
   async function copy() {
     const text = editor.getText();
@@ -320,15 +280,12 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
 
   if (lang === 'python') {
     preloadPython().catch(() => {});
-    disposers.push(onPythonStatus(() => refresh()));
+    onDispose(onPythonStatus(() => refresh()));
   }
-  const onNet = () => {
-    online = navigator.onLine;
-    refresh();
-  };
+  const onNet = () => refresh();
   window.addEventListener('online', onNet);
   window.addEventListener('offline', onNet);
-  disposers.push(() => {
+  onDispose(() => {
     window.removeEventListener('online', onNet);
     window.removeEventListener('offline', onNet);
   });
@@ -369,11 +326,12 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
         { class: 'panel' },
         h('div', { class: 'panel-h' }, h('span', null, `${LANG_LABEL[lang]} のコード(書きかえて試せるよ)`)),
         editorHost,
-        h('div', { class: 'actions' }, runBtn, resetBtn, copyBtn),
+        h('div', { class: 'actions' }, runBtn, resetBtn, copyBtn, askBtn),
       ),
       lang === 'kotlin' ? h('div', { class: 'callout warn' }, 'Kotlin は、スマホの中では動かせないので、ネットにつないで公式の Kotlin Playground で実行するよ。オフラインでは、あらかじめ用意した結果(目安)だけ見られる。行・桁の数字は少しずれることがあるよ。') : null,
       lang === 'c' ? h('div', { class: 'callout warn' }, 'C は、スマホの中の小さな C エンジン(picoc)で動かすよ。結果は gcc と同じでも、エラーの文章は gcc とちがうことがあるよ。' + (topic.picocMatches ? '' : ' この例は結果もちがう場合があるよ。')) : null,
       h('section', { class: 'panel' }, resultHost),
+      h('a', { class: 'btn edit-cta', href: `#/edit?l=${lang}` }, '✏️ 自分のコードを書いて試す(エディタ)'),
       compare,
       h('footer', null, '例文の結果は、Python(Pyodide)・JavaScript(V8)・C(gcc)の本物の処理系で実際に動かして記録しているよ。'),
     ),
@@ -384,13 +342,16 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
 // ---------- ルーティング ----------
 let lastKey = '';
 function render() {
-  dispose();
+  disposeAll();
   const route = parseHash();
   app.replaceChildren();
-  const k = route.name === 'home' ? 'home' : `topic:${route.id}`;
+  const k = route.name === 'home' ? 'home' : route.name === 'edit' ? `edit:${route.lang}` : `topic:${route.id}`;
   if (route.name === 'home') {
     renderHome();
     document.title = 'コード辞典';
+  } else if (route.name === 'edit') {
+    renderEditorPage(app, route.lang, go);
+    document.title = 'エディタ | コード辞典';
   } else {
     renderTopic(route);
     document.title = `${topicById(route.id)!.title} | コード辞典`;

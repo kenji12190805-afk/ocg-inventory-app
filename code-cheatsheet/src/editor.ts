@@ -1,5 +1,5 @@
-import { EditorState, type Extension } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
+import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state';
+import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, Decoration, type DecorationSet } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { HighlightStyle, StreamLanguage, bracketMatching, indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
@@ -43,11 +43,30 @@ const theme = EditorView.theme({
   '&.cm-focused': { outline: '2px solid var(--accent)', outlineOffset: '2px' },
   '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': { backgroundColor: 'var(--code-sel) !important' },
   '.cm-cursor': { borderLeftColor: 'var(--accent)' },
+  '.cm-errorLine': { backgroundColor: 'var(--danger-bg)', boxShadow: 'inset 3px 0 0 var(--danger)' },
+});
+
+const setErrorLines = StateEffect.define<number[]>();
+const errorLineField = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update(deco, tr) {
+    for (const e of tr.effects) {
+      if (e.is(setErrorLines)) {
+        const lines = [...new Set(e.value)].filter((n) => n >= 1 && n <= tr.state.doc.lines).sort((a, b) => a - b);
+        return Decoration.set(lines.map((n) => Decoration.line({ class: 'cm-errorLine' }).range(tr.state.doc.line(n).from)));
+      }
+    }
+    return tr.docChanged ? Decoration.none : deco;
+  },
+  provide: (f) => EditorView.decorations.from(f),
 });
 
 export interface Editor {
+  /** エラーが出た行(1始まり)に色をつける。コードを書きかえると消える */
+  markLines(lines: number[]): void;
   getText(): string;
   setText(text: string): void;
+  focus?(): void;
   destroy(): void;
 }
 
@@ -62,6 +81,7 @@ export function createEditor(parent: HTMLElement, text: string, lang: Lang, onCh
         history(),
         drawSelection(),
         highlightActiveLine(),
+        errorLineField,
         bracketMatching(),
         indentUnit.of(lang === 'javascript' ? '  ' : '    '),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
@@ -76,6 +96,8 @@ export function createEditor(parent: HTMLElement, text: string, lang: Lang, onCh
     }),
   });
   return {
+    focus: () => view.focus(),
+    markLines: (lines) => view.dispatch({ effects: setErrorLines.of(lines) }),
     getText: () => view.state.doc.toString(),
     setText: (s) => view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: s } }),
     destroy: () => view.destroy(),
