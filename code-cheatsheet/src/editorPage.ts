@@ -1,6 +1,7 @@
 import { h, toast, store, onDispose, netBadge, copyText } from './ui';
 import { LANG_ORDER, LANG_LABEL } from './data/topics';
-import { createEditor, type Editor } from './editor';
+import { createEditor, entryDom, type Editor, type WordInfo } from './editor';
+import { expandDefault } from './dict/index.ts';
 import { run, check, canCheck, preloadPython, onPythonStatus, getPythonStatus, type Lang, type RunResult } from './runners';
 import { diagnose, type Diagnosed } from './errors';
 import { verdictCard } from './verdict';
@@ -13,6 +14,29 @@ const STARTER: Record<Lang, string> = {
   kotlin: 'fun main() {\n    println("こんにちは")\n}\n',
 };
 const EXT: Record<Lang, string> = { python: 'main.py', javascript: 'main.js', c: 'main.c', kotlin: 'main.kt' };
+
+/** スマホで打ちにくい記号を、ワンタップで入れるバー(back: 入れたあとにカーソルを戻す文字数) */
+interface Key {
+  label: string;
+  text: string;
+  back?: number;
+}
+const COMMON: Key[] = [
+  { label: '( )', text: '()', back: 1 },
+  { label: '[ ]', text: '[]', back: 1 },
+  { label: '{ }', text: '{}', back: 1 },
+  { label: '" "', text: '""', back: 1 },
+  { label: "' '", text: "''", back: 1 },
+  { label: '=', text: ' = ' },
+  { label: '.', text: '.' },
+  { label: ',', text: ', ' },
+];
+const KEYS: Record<Lang, Key[]> = {
+  python: [{ label: ':', text: ':' }, ...COMMON, { label: '#', text: '# ' }, { label: '_', text: '_' }],
+  javascript: [{ label: ';', text: ';' }, ...COMMON, { label: '=>', text: ' => ' }, { label: '`', text: '``', back: 1 }, { label: '//', text: '// ' }],
+  c: [{ label: ';', text: ';' }, ...COMMON, { label: '%d', text: '%d' }, { label: '\\n', text: '\\n' }, { label: '&', text: '&' }, { label: '*', text: '*' }, { label: '#', text: '#' }],
+  kotlin: [...COMMON, { label: '->', text: ' -> ' }, { label: '?.', text: '?.' }, { label: '$', text: '$' }, { label: '//', text: '// ' }],
+};
 
 interface Snippet {
   id: string;
@@ -158,10 +182,48 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
     toast(`「${name}」を保存したよ`);
   }
 
-  const editor: Editor = createEditor(editorHost, initial, lang, () => {
-    store.set(draftKey, editor.getText()); // 書いたものは自動で残る
-    updatePreview();
-  });
+  // ---- 候補・意味・入力バー ----
+  const meaningHost = h('div', { class: 'meaning-body', 'aria-live': 'polite' });
+  function showMeaning(info: WordInfo | null) {
+    meaningHost.replaceChildren();
+    if (!info) {
+      meaningHost.append(h('p', { class: 'hint' }, 'コードの中の言葉(for や print など)にカーソルを置くと、意味がここに出るよ。何か打つと、関連するコードが候補に出る。「くりかえし」のような日本語でもOK。'));
+      return;
+    }
+    if (!info.entry) {
+      meaningHost.append(h('p', { class: 'hint' }, h('code', null, info.word), ' は辞書にない言葉だよ(自分で作った名前かも)。'));
+      return;
+    }
+    const e = info.entry;
+    meaningHost.append(
+      h('div', { class: 'm-head' }, h('code', { class: 'm-word' }, info.word), h('span', { class: 'm-label' }, e.l)),
+      h('p', { class: 'm-text' }, e.m),
+      h('pre', { class: 'm-example' }, expandDefault(e.t, e.raw)),
+      h('button', { class: 'btn small', onpointerdown: (ev: Event) => ev.preventDefault(), onclick: () => editor.insertEntry(e) }, 'この例をカーソルの位置に入れる'),
+    );
+  }
+  const keep = (ev: Event) => ev.preventDefault(); // ボタンを押しても、エディタからキーボードが消えないようにする
+  const indentText = lang === 'javascript' ? '  ' : '    ';
+  const keyBar = h(
+    'div',
+    { class: 'keybar', role: 'toolbar', 'aria-label': '入力バー' },
+    h('button', { class: 'key main', onpointerdown: keep, onclick: () => editor.showSuggestions() }, '💡 候補'),
+    h('button', { class: 'key main', onpointerdown: keep, onclick: () => editor.nextField() }, '⇥ 次の穴'),
+    h('button', { class: 'key', onpointerdown: keep, onclick: () => editor.insert(indentText) }, '字下げ'),
+    ...KEYS[lang].map((k) => h('button', { class: 'key', onpointerdown: keep, onclick: () => editor.insert(k.text, k.back ?? 0) }, k.label)),
+  );
+
+  const editor: Editor = createEditor(
+    editorHost,
+    initial,
+    lang,
+    () => {
+      store.set(draftKey, editor.getText()); // 書いたものは自動で残る
+      updatePreview();
+    },
+    { onWord: showMeaning },
+  );
+  showMeaning(null);
   onDispose(() => editor.destroy());
   if (lang === 'python') {
     preloadPython().catch(() => {});
@@ -193,7 +255,8 @@ export function renderEditorPage(app: HTMLElement, lang: Lang, go: (hash: string
         { class: 'tabs', role: 'tablist' },
         ...LANG_ORDER.map((l) => h('button', { class: `tab lang-${l}`, role: 'tab', 'aria-selected': String(l === lang), onclick: () => go(`#/edit?l=${l}`, true) }, LANG_LABEL[l])),
       ),
-      h('section', { class: 'panel', style: 'margin-top:12px' }, h('div', { class: 'panel-h' }, h('span', null, EXT[lang]), h('button', { class: 'btn small', onclick: () => (editor.setText(STARTER[lang])) }, 'ひな形を入れる')), editorHost, h('div', { class: 'actions' }, runBtn, checkBtn, clearBtn)),
+      h('section', { class: 'panel', style: 'margin-top:12px' }, h('div', { class: 'panel-h' }, h('span', null, EXT[lang]), h('button', { class: 'btn small', onclick: () => (editor.setText(STARTER[lang])) }, 'ひな形を入れる')), editorHost, keyBar, h('div', { class: 'actions' }, runBtn, checkBtn, clearBtn)),
+      h('section', { class: 'panel meaning' }, h('div', { class: 'panel-h' }, h('span', null, '💡 意味と候補')), meaningHost),
       lang === 'kotlin' ? h('div', { class: 'callout warn' }, 'Kotlin は、ネットにつないで公式の Kotlin Playground で実行するよ。') : null,
       lang === 'c' ? h('div', { class: 'callout warn' }, 'C は、スマホの中の小さな C エンジン(picoc)で動かすよ。エラーの文章は gcc とちがうことがあるよ。') : null,
       resultHost,
