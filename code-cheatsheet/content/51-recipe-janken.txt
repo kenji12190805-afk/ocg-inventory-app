@@ -1,0 +1,71 @@
+=== meta
+{"id":"recipe-janken","kind":"recipe","category":"作ってみよう","title":"じゃんけんの勝ち負けを判定する","summary":"グー・チョキ・パーを 0・1・2 で表して、「勝ち・負け・あいこ」を返す関数を作る。","uses":["function","if","list","for","math"],"keywords":["じゃんけん","ジャンケン","勝ち負け","判定","ゲーム","ミニアプリ","あまり","剰余","作ってみよう","レシピ"],
+"notes":{"python":"関数 + リスト + if + あまり(%)の組み合わせ。(a - b + 3) % 3 が 2 なら a の勝ち、というルールを使う。","javascript":"関数 + 配列 + if + あまり(%)の組み合わせ。負の数のあまりは言語で結果が変わるので、+ 3 して正にしてから % 3。","c":"関数 + 配列 + if の組み合わせ。文字列を返す関数は、戻り値の型を char * にする。","kotlin":"関数 + リスト + if + あまりの組み合わせ。Pair(0, 1) は2つの値を組にしたもの。"}}
+=== python
+hands = ["グー", "チョキ", "パー"]
+
+
+def judge(a, b):
+    if a == b:
+        return "あいこ"
+    if (a - b + 3) % 3 == 2:
+        return "勝ち"
+    return "負け"
+
+
+for a, b in [(0, 0), (0, 1), (0, 2), (1, 2)]:
+    print(f"{hands[a]} vs {hands[b]}: {judge(a, b)}")
+=== javascript
+const hands = ["グー", "チョキ", "パー"];
+
+function judge(a, b) {
+  if (a === b) return "あいこ";
+  if ((a - b + 3) % 3 === 2) return "勝ち";
+  return "負け";
+}
+
+for (const [a, b] of [[0, 0], [0, 1], [0, 2], [1, 2]]) {
+  console.log(`${hands[a]} vs ${hands[b]}: ${judge(a, b)}`);
+}
+=== c
+#include <stdio.h>
+
+char *judge(int a, int b) {
+    if (a == b) {
+        return "draw";
+    }
+    if ((a - b + 3) % 3 == 2) {
+        return "win";
+    }
+    return "lose";
+}
+
+int main(void) {
+    char *hands[3] = {"Rock", "Scissors", "Paper"};
+    int pairs[4][2] = {{0, 0}, {0, 1}, {0, 2}, {1, 2}};
+    for (int i = 0; i < 4; i++) {
+        int a = pairs[i][0];
+        int b = pairs[i][1];
+        printf("%s vs %s: %s\n", hands[a], hands[b], judge(a, b));
+    }
+    return 0;
+}
+=== kotlin
+val hands = listOf("グー", "チョキ", "パー")
+
+fun judge(a: Int, b: Int): String {
+    if (a == b) return "あいこ"
+    if ((a - b + 3) % 3 == 2) return "勝ち"
+    return "負け"
+}
+
+fun main() {
+    for ((a, b) in listOf(Pair(0, 0), Pair(0, 1), Pair(0, 2), Pair(1, 2))) {
+        println("${hands[a]} vs ${hands[b]}: ${judge(a, b)}")
+    }
+}
+=== kotlin.out
+グー vs グー: あいこ
+グー vs チョキ: 勝ち
+グー vs パー: 負け
+チョキ vs パー: 勝ち

@@ -1,0 +1,72 @@
+=== meta
+{"id":"recipe-receipt","kind":"recipe","category":"作ってみよう","title":"買い物のレシートを作る","summary":"品物・値段・個数のリストから、1行ごとの金額と、小計・税・合計を出す。","uses":["list","for","math","format","variables"],"keywords":["レシート","買い物","会計","合計","税","消費税","金額","値段","小計","計算","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"(名前, 値段, 個数) のリスト + for + 計算 + f文字列の組み合わせ。税は // で切り捨ての割り算(10%)。","javascript":"配列の配列 + for...of + 分割代入 + テンプレート文字列の組み合わせ。税は Math.floor で切り捨て。","c":"名前・値段・個数を別々の配列に入れて、同じ番号で取り出す。整数どうしの割り算は、小数点以下が切り捨てられる(税の計算に都合がいい)。","kotlin":"Triple(名前, 値段, 個数) のリスト + for + 分割代入の組み合わせ。整数どうしの / は、切り捨て。"}}
+=== python
+items = [("りんご", 120, 3), ("みかん", 80, 5), ("ぶどう", 450, 1)]
+
+subtotal = 0
+for name, price, qty in items:
+    line = price * qty
+    subtotal += line
+    print(f"{name} {price}円 x {qty} = {line}円")
+
+tax = subtotal // 10
+print(f"小計: {subtotal}円")
+print(f"税(10%): {tax}円")
+print(f"合計: {subtotal + tax}円")
+=== javascript
+const items = [["りんご", 120, 3], ["みかん", 80, 5], ["ぶどう", 450, 1]];
+
+let subtotal = 0;
+for (const [name, price, qty] of items) {
+  const line = price * qty;
+  subtotal += line;
+  console.log(`${name} ${price}円 x ${qty} = ${line}円`);
+}
+
+const tax = Math.floor(subtotal / 10);
+console.log(`小計: ${subtotal}円`);
+console.log(`税(10%): ${tax}円`);
+console.log(`合計: ${subtotal + tax}円`);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char *names[3] = {"apple", "orange", "grape"};
+    int prices[3] = {120, 80, 450};
+    int qtys[3] = {3, 5, 1};
+    int subtotal = 0;
+    for (int i = 0; i < 3; i++) {
+        int line = prices[i] * qtys[i];
+        subtotal += line;
+        printf("%s %d yen x %d = %d yen\n", names[i], prices[i], qtys[i], line);
+    }
+    int tax = subtotal / 10;
+    printf("subtotal: %d yen\n", subtotal);
+    printf("tax(10%%): %d yen\n", tax);
+    printf("total: %d yen\n", subtotal + tax);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val items = listOf(Triple("りんご", 120, 3), Triple("みかん", 80, 5), Triple("ぶどう", 450, 1))
+
+    var subtotal = 0
+    for ((name, price, qty) in items) {
+        val line = price * qty
+        subtotal += line
+        println("$name ${price}円 x $qty = ${line}円")
+    }
+
+    val tax = subtotal / 10
+    println("小計: ${subtotal}円")
+    println("税(10%): ${tax}円")
+    println("合計: ${subtotal + tax}円")
+}
+=== kotlin.out
+りんご 120円 x 3 = 360円
+みかん 80円 x 5 = 400円
+ぶどう 450円 x 1 = 450円
+小計: 1210円
+税(10%): 121円
+合計: 1331円

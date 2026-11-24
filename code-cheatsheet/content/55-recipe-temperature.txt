@@ -1,0 +1,35 @@
+=== meta
+{"id":"recipe-temperature","kind":"recipe","category":"作ってみよう","title":"温度の変換表を作る","summary":"摂氏(℃)0〜40度を、10度ずつ、華氏(℉)に直した表を出す。","uses":["for","math","format","variables"],"keywords":["温度","摂氏","華氏","変換","変換表","換算","単位","表","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"for + range(開始, 終了, 刻み幅) + 計算 + f文字列の組み合わせ。{f:.1f} で小数1桁。","javascript":"for + 計算 + テンプレート文字列の組み合わせ。toFixed(1) で小数1桁。","c":"for + 計算 + printf の組み合わせ。9.0 のように小数にして計算しないと、整数どうしの割り算になってしまう。","kotlin":"for + step + 計算 + 文字列テンプレートの組み合わせ。0..40 step 10 で、10ずつ増やす。"}}
+=== python
+for c in range(0, 41, 10):
+    f = c * 9 / 5 + 32
+    print(f"{c}°C = {f:.1f}°F")
+=== javascript
+for (let c = 0; c <= 40; c += 10) {
+  const f = (c * 9) / 5 + 32;
+  console.log(`${c}°C = ${f.toFixed(1)}°F`);
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    for (int c = 0; c <= 40; c += 10) {
+        double f = c * 9.0 / 5 + 32;
+        printf("%d C = %.1f F\n", c, f);
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    for (c in 0..40 step 10) {
+        val f = c * 9.0 / 5 + 32
+        println("$c°C = ${"%.1f".format(f)}°F")
+    }
+}
+=== kotlin.out
+0°C = 32.0°F
+10°C = 50.0°F
+20°C = 68.0°F
+30°C = 86.0°F
+40°C = 104.0°F

@@ -26,6 +26,10 @@ export interface Topic {
   variants: Partial<Record<Lang, Variant>>;
   /** スマホ内のCエンジン(picoc)の結果がgccと一致するか */
   picocMatches: boolean;
+  /** レシピ(部品を組み合わせて作るミニプログラム)か、ふつうの部品か */
+  kind: 'topic' | 'recipe';
+  /** レシピが使っている部品(トピックの id) */
+  uses: string[];
 }
 
 export const LANG_ORDER: Lang[] = ['python', 'javascript', 'c', 'kotlin'];
@@ -68,7 +72,7 @@ function build(): Topic[] {
         throw new Error(`${path}: ${lang} の記録がありません。npm run record を実行してください`);
       }
     }
-    topics.push({ id: t.id, category: t.category, title: t.title, summary: t.summary, keywords: t.keywords ?? [], variants, picocMatches: picoc[t.id] !== false });
+    topics.push({ id: t.id, category: t.category, title: t.title, summary: t.summary, keywords: t.keywords ?? [], variants, picocMatches: picoc[t.id] !== false, kind: t.kind === 'recipe' ? 'recipe' : 'topic', uses: t.uses ?? [] });
   }
   return topics;
 }
@@ -76,3 +80,7 @@ function build(): Topic[] {
 export const TOPICS: Topic[] = build();
 export const topicById = (id: string) => TOPICS.find((t) => t.id === id);
 export const CATEGORIES = [...new Set(TOPICS.map((t) => t.category))];
+
+/** この部品を使っているレシピ(「組み合わせて作れるもの」) */
+export const recipesUsing = (id: string) => TOPICS.filter((t) => t.kind === 'recipe' && t.uses.includes(id));
+export const RECIPE_CATEGORY = '作ってみよう';

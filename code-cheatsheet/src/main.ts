@@ -1,6 +1,6 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
-import { TOPICS, topicById, CATEGORIES, LANG_ORDER, LANG_LABEL, LANG_ENGINE, type Topic, type Outcome } from './data/topics';
+import { TOPICS, topicById, CATEGORIES, LANG_ORDER, LANG_LABEL, LANG_ENGINE, recipesUsing, RECIPE_CATEGORY, type Topic, type Outcome } from './data/topics';
 import { search } from './search';
 import { createEditor, type Editor } from './editor';
 import { run, preloadPython, onPythonStatus, getPythonStatus, type Lang, type RunResult } from './runners';
@@ -110,10 +110,10 @@ function renderHome() {
     if (!q) {
       list.append(
         h('p', { class: 'hint' }, 'やりたいことから、4つの言語の書き方をまとめて探せるよ。'),
-        h('div', { class: 'sugg' }, ...['くりかえし', '配列', '文字列', 'エラー', 'null', 'ソート'].map((s) => h('button', { onclick: () => ((input.value = s), onInput()) }, s))),
+        h('div', { class: 'sugg' }, ...['くりかえし', '配列', '文字列', 'エラー', 'null', 'ソート', '作ってみよう'].map((s) => h('button', { onclick: () => ((input.value = s), onInput()) }, s))),
       );
       for (const cat of CATEGORIES) {
-        list.append(h('div', { class: 'cat' }, cat), h('div', { class: 'cards' }, ...TOPICS.filter((t) => t.category === cat).map(card)));
+        list.append(h('div', { class: 'cat' }, cat === RECIPE_CATEGORY ? '🧩 部品を組み合わせて作ってみよう' : cat), h('div', { class: 'cards' }, ...TOPICS.filter((t) => t.category === cat).map(card)));
       }
       return;
     }
@@ -290,6 +290,24 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
     window.removeEventListener('offline', onNet);
   });
 
+  // レシピ: 使っている部品へのリンク / ふつうの部品: この部品を使ったレシピへのリンク
+  const partLink = (id: string) => {
+    const t = topicById(id);
+    return t ? h('a', { class: 'chip', href: topicHash(id, t.variants[lang] ? lang : LANG_ORDER.find((l) => t.variants[l])!) }, t.title) : null;
+  };
+  const usesBlock = topic.uses.length
+    ? h('div', { class: 'uses' }, h('b', null, '🧩 使っている部品'), h('div', { class: 'chips wrapchips' }, ...topic.uses.map(partLink)))
+    : null;
+  const recipes = recipesUsing(topic.id);
+  const usedByBlock = recipes.length
+    ? h(
+        'section',
+        { class: 'uses' },
+        h('b', null, '🧩 この部品を組み合わせて作れるもの'),
+        h('div', { class: 'cards' }, ...recipes.map((r) => h('a', { class: 'card', href: topicHash(r.id, r.variants[lang] ? lang : LANG_ORDER.find((l) => r.variants[l])!) }, h('h3', null, r.title), h('p', null, r.summary)))),
+      )
+    : null;
+
   // 他の言語での書き方
   const others = LANG_ORDER.filter((l) => l !== lang && topic.variants[l]);
   const compare = h(
@@ -317,6 +335,7 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
       { class: `wrap lang-${lang}` },
       h('h2', { class: 't-title' }, topic.title),
       h('p', { class: 't-sum' }, topic.summary),
+      usesBlock,
       tabs,
       seg,
       mode === 'bug' && v.why ? h('div', { class: 'callout why' }, h('b', null, 'なぜエラーになる?'), v.why) : null,
@@ -333,6 +352,7 @@ function renderTopic(route: Extract<Route, { name: 'topic' }>) {
       h('section', { class: 'panel' }, resultHost),
       h('a', { class: 'btn edit-cta', href: `#/edit?l=${lang}` }, '✏️ 自分のコードを書いて試す(エディタ)'),
       compare,
+      usedByBlock,
       h('footer', null, '例文の結果は、Python(Pyodide)・JavaScript(V8)・C(gcc)の本物の処理系で実際に動かして記録しているよ。'),
     ),
   );

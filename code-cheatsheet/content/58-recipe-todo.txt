@@ -1,0 +1,78 @@
+=== meta
+{"id":"recipe-todo","kind":"recipe","category":"作ってみよう","title":"TODOリストを作る","summary":"やることのリストを作って、1つを「完了」にして、チェックつきで表示する。","uses":["class","list","iterate","if","format"],"keywords":["TODO","todo","やること","タスク","リスト","チェック","完了","管理","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"辞書 + リスト + enumerate + 条件式の組み合わせ。{t['title']} のように、f文字列の中でも辞書の値を取り出せる。","javascript":"オブジェクト + 配列 + forEach + 条件演算子の組み合わせ。todos[1].done = true で、中身を書き換える。","c":"struct + 配列 + for + if の組み合わせ。文字列は strcpy で入れる。","kotlin":"クラス + リスト + withIndex + if(式)の組み合わせ。あとで変える done だけ var にする。"}}
+=== python
+todos = [
+    {"title": "牛乳を買う", "done": False},
+    {"title": "宿題をする", "done": False},
+    {"title": "掃除する", "done": False},
+]
+
+todos[1]["done"] = True
+
+for i, t in enumerate(todos, start=1):
+    mark = "x" if t["done"] else " "
+    print(f"{i}. {t['title']} [{mark}]")
+=== javascript
+const todos = [
+  { title: "牛乳を買う", done: false },
+  { title: "宿題をする", done: false },
+  { title: "掃除する", done: false },
+];
+
+todos[1].done = true;
+
+todos.forEach((t, i) => {
+  const mark = t.done ? "x" : " ";
+  console.log(`${i + 1}. ${t.title} [${mark}]`);
+});
+=== c
+#include <stdio.h>
+#include <string.h>
+
+struct Todo {
+    char title[32];
+    int done;
+};
+
+int main(void) {
+    struct Todo todos[3];
+    strcpy(todos[0].title, "buy milk");
+    todos[0].done = 0;
+    strcpy(todos[1].title, "homework");
+    todos[1].done = 0;
+    strcpy(todos[2].title, "clean up");
+    todos[2].done = 0;
+
+    todos[1].done = 1;
+
+    for (int i = 0; i < 3; i++) {
+        char mark = ' ';
+        if (todos[i].done) {
+            mark = 'x';
+        }
+        printf("%d. %s [%c]\n", i + 1, todos[i].title, mark);
+    }
+    return 0;
+}
+=== kotlin
+class Todo(val title: String, var done: Boolean)
+
+fun main() {
+    val todos = listOf(
+        Todo("牛乳を買う", false),
+        Todo("宿題をする", false),
+        Todo("掃除する", false),
+    )
+
+    todos[1].done = true
+
+    for ((i, t) in todos.withIndex()) {
+        val mark = if (t.done) "x" else " "
+        println("${i + 1}. ${t.title} [$mark]")
+    }
+}
+=== kotlin.out
+1. 牛乳を買う [ ]
+2. 宿題をする [x]
+3. 掃除する [ ]

@@ -1,0 +1,70 @@
+=== meta
+{"id":"recipe-grades","kind":"recipe","category":"作ってみよう","title":"成績表を作る","summary":"点数のリストから、合格・不合格の判定と、合計・平均・最高点を出す。","uses":["list","for","if","stats","format"],"keywords":["成績","成績表","点数","テスト","平均点","合格","不合格","判定","集計","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"リスト + for + if(条件式) + 合計・平均・最高 の組み合わせ。平均は sum(…) / len(…)。","javascript":"配列 + for...of + 条件演算子 + reduce / Math.max の組み合わせ。JavaScript は 72.0 も 72 と表示される。","c":"配列 + for + if の組み合わせ。合計・最高点は、くりかえしの中で自分で求める。平均は (double)sum / 5 で、割る前に小数にする。","kotlin":"リスト + for + if(式) + sum() / average() / max() の組み合わせ。"}}
+=== python
+scores = [80, 65, 92, 48, 75]
+
+for s in scores:
+    result = "合格" if s >= 60 else "不合格"
+    print(f"{s}点: {result}")
+
+print("合計:", sum(scores))
+print("平均:", sum(scores) / len(scores))
+print("最高:", max(scores))
+=== javascript
+const scores = [80, 65, 92, 48, 75];
+
+for (const s of scores) {
+  const result = s >= 60 ? "合格" : "不合格";
+  console.log(`${s}点: ${result}`);
+}
+
+const total = scores.reduce((a, b) => a + b, 0);
+console.log("合計:", total);
+console.log("平均:", total / scores.length);
+console.log("最高:", Math.max(...scores));
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int scores[5] = {80, 65, 92, 48, 75};
+    int sum = 0;
+    int max = scores[0];
+    for (int i = 0; i < 5; i++) {
+        if (scores[i] >= 60) {
+            printf("%d: pass\n", scores[i]);
+        } else {
+            printf("%d: fail\n", scores[i]);
+        }
+        sum += scores[i];
+        if (scores[i] > max) {
+            max = scores[i];
+        }
+    }
+    printf("sum: %d\n", sum);
+    printf("average: %.1f\n", (double)sum / 5);
+    printf("max: %d\n", max);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val scores = listOf(80, 65, 92, 48, 75)
+
+    for (s in scores) {
+        val result = if (s >= 60) "合格" else "不合格"
+        println("${s}点: $result")
+    }
+
+    println("合計: ${scores.sum()}")
+    println("平均: ${scores.average()}")
+    println("最高: ${scores.max()}")
+}
+=== kotlin.out
+80点: 合格
+65点: 合格
+92点: 合格
+48点: 不合格
+75点: 合格
+合計: 360
+平均: 72.0
+最高: 92

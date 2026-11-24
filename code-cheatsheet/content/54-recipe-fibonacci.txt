@@ -1,0 +1,53 @@
+=== meta
+{"id":"recipe-fibonacci","kind":"recipe","category":"作ってみよう","title":"フィボナッチ数列を作る","summary":"0, 1, 1, 2, 3, 5, 8… 前の2つを足して次の数を作る。最初の10個を出す。","uses":["variables","for","list","append"],"keywords":["フィボナッチ","fibonacci","数列","前の2つを足す","漸化式","定番","練習問題","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"変数2つ + for + リストの組み合わせ。a, b = b, a + b で、2つの変数を同時に入れ替えられる(Python らしい書き方)。","javascript":"変数2つ + for + 配列の組み合わせ。[a, b] = [b, a + b] で、同時に入れ替えられる。","c":"変数 + for の組み合わせ。入れ替えには、一時的な変数(next)が要る。","kotlin":"変数 + repeat + リストの組み合わせ。a と b は、あとで入れ直すので var。"}}
+=== python
+fib = []
+a, b = 0, 1
+for _ in range(10):
+    fib.append(a)
+    a, b = b, a + b
+print(fib)
+=== javascript
+const fib = [];
+let a = 0;
+let b = 1;
+for (let i = 0; i < 10; i++) {
+  fib.push(a);
+  [a, b] = [b, a + b];
+}
+console.log(fib);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int a = 0;
+    int b = 1;
+    printf("[");
+    for (int i = 0; i < 10; i++) {
+        if (i > 0) {
+            printf(", ");
+        }
+        printf("%d", a);
+        int next = a + b;
+        a = b;
+        b = next;
+    }
+    printf("]\n");
+    return 0;
+}
+=== kotlin
+fun main() {
+    val fib = mutableListOf<Int>()
+    var a = 0
+    var b = 1
+    repeat(10) {
+        fib.add(a)
+        val next = a + b
+        a = b
+        b = next
+    }
+    println(fib)
+}
+=== kotlin.out
+[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]

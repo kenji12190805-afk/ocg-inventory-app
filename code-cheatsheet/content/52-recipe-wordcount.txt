@@ -1,0 +1,66 @@
+=== meta
+{"id":"recipe-wordcount","kind":"recipe","category":"作ってみよう","title":"単語カウンターを作る","summary":"文章を単語に分けて、それぞれ何回出てくるかを数えて、多い順に表示する。","uses":["search","dict","for","sort","count"],"keywords":["単語","単語カウンター","ワードカウント","出現回数","頻度","文章","数える","集計","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"split + 辞書 + for + sorted の組み合わせ。get(キー, 0) + 1 で、最初の1回も数えられる。並べ替えは「回数の多い順、同じなら名前順」。","javascript":"split + オブジェクト + for...of + sort の組み合わせ。(counts[w] ?? 0) + 1 で数える。","c":"C に辞書がないので、配列を1つずつ調べる。「前に出てきた単語はとばす」→「全部数える」の2段階。並べ替えは省略して、出てきた順に表示する。","kotlin":"split + groupingBy().eachCount() + sortedWith の組み合わせ。数えるのは1行で書ける。"}}
+=== python
+text = "the cat and the dog and the bird"
+
+counts = {}
+for w in text.split():
+    counts[w] = counts.get(w, 0) + 1
+
+for w, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+    print(f"{w}: {n}")
+=== javascript
+const text = "the cat and the dog and the bird";
+
+const counts = {};
+for (const w of text.split(" ")) {
+  counts[w] = (counts[w] ?? 0) + 1;
+}
+
+const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+for (const [w, n] of sorted) {
+  console.log(`${w}: ${n}`);
+}
+=== c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char *words[8] = {"the", "cat", "and", "the", "dog", "and", "the", "bird"};
+    for (int i = 0; i < 8; i++) {
+        int seen = 0;
+        for (int j = 0; j < i; j++) {
+            if (strcmp(words[i], words[j]) == 0) {
+                seen = 1;
+            }
+        }
+        if (seen) {
+            continue;
+        }
+        int count = 0;
+        for (int j = 0; j < 8; j++) {
+            if (strcmp(words[i], words[j]) == 0) {
+                count++;
+            }
+        }
+        printf("%s: %d\n", words[i], count);
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val text = "the cat and the dog and the bird"
+
+    val counts = text.split(" ").groupingBy { it }.eachCount()
+    val sorted = counts.entries.sortedWith(compareBy({ -it.value }, { it.key }))
+    for ((w, n) in sorted) {
+        println("$w: $n")
+    }
+}
+=== kotlin.out
+the: 3
+and: 2
+bird: 1
+cat: 1
+dog: 1

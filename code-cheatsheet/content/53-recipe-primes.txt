@@ -1,0 +1,81 @@
+=== meta
+{"id":"recipe-primes","kind":"recipe","category":"作ってみよう","title":"素数を探す","summary":"30までの素数(1と自分以外で割り切れない数)を、関数とくりかえしで全部見つける。","uses":["function","for","while","if","list","append"],"keywords":["素数","prime","割り切れる","約数","アルゴリズム","定番","練習問題","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"関数 + while + if + リストの組み合わせ。i * i <= n までだけ調べれば十分(それより大きい約数はペアで見つかるから)。","javascript":"関数 + for + if + 配列の push の組み合わせ。console.log に配列を渡すと、まとめて表示される。","c":"関数 + for + if の組み合わせ。C にはリストがないので、見つけるたびに、その場で printf する。カンマは最初だけ付けないようにする。","kotlin":"関数 + while + if + filter の組み合わせ。(2..30).filter { … } で、条件に合う数だけを集める。"}}
+=== python
+def is_prime(n):
+    if n < 2:
+        return False
+    i = 2
+    while i * i <= n:
+        if n % i == 0:
+            return False
+        i += 1
+    return True
+
+
+primes = []
+for n in range(2, 31):
+    if is_prime(n):
+        primes.append(n)
+print(primes)
+=== javascript
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}
+
+const primes = [];
+for (let n = 2; n <= 30; n++) {
+  if (isPrime(n)) primes.push(n);
+}
+console.log(primes);
+=== c
+#include <stdio.h>
+
+int is_prime(int n) {
+    if (n < 2) {
+        return 0;
+    }
+    for (int i = 2; i * i <= n; i++) {
+        if (n % i == 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int main(void) {
+    int first = 1;
+    printf("[");
+    for (int n = 2; n <= 30; n++) {
+        if (is_prime(n)) {
+            if (!first) {
+                printf(", ");
+            }
+            printf("%d", n);
+            first = 0;
+        }
+    }
+    printf("]\n");
+    return 0;
+}
+=== kotlin
+fun isPrime(n: Int): Boolean {
+    if (n < 2) return false
+    var i = 2
+    while (i * i <= n) {
+        if (n % i == 0) return false
+        i++
+    }
+    return true
+}
+
+fun main() {
+    val primes = (2..30).filter { isPrime(it) }
+    println(primes)
+}
+=== kotlin.out
+[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]

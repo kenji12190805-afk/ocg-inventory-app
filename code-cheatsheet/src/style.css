@@ -256,3 +256,9 @@ footer { color: var(--muted); font-size: 12px; text-align: center; padding: 18px
 .cm-explain { color: var(--syn-comment); font-style: italic; font-size: 14px; line-height: 1.5; padding-top: 0; padding-bottom: 2px; white-space: pre-wrap; word-break: break-word; user-select: none; }
 .toolrow { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--border); }
 .btn.toggle[aria-pressed='true'] { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 700; }
+
+/* ---- 部品とレシピのつながり ---- */
+.uses { margin: 4px 0 14px; display: grid; gap: 8px; }
+.uses > b { font-size: 14px; }
+.wrapchips { flex-wrap: wrap; overflow: visible; padding: 0; }
+.wrapchips .chip { text-decoration: none; height: auto; min-height: 36px; padding: 6px 12px; line-height: 1.35; }

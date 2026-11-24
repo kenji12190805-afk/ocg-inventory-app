@@ -895,5 +895,104 @@
     "failed": false
    }
   }
+ },
+ "recipe-grades": {
+  "python": {
+   "out": "80点: 合格\n65点: 合格\n92点: 合格\n48点: 不合格\n75点: 合格\n合計: 360\n平均: 72.0\n最高: 92"
+  },
+  "javascript": {
+   "out": "80点: 合格\n65点: 合格\n92点: 合格\n48点: 不合格\n75点: 合格\n合計: 360\n平均: 72\n最高: 92"
+  },
+  "c": {
+   "out": "80: pass\n65: pass\n92: pass\n48: fail\n75: pass\nsum: 360\naverage: 72.0\nmax: 92"
+  }
+ },
+ "recipe-janken": {
+  "python": {
+   "out": "グー vs グー: あいこ\nグー vs チョキ: 勝ち\nグー vs パー: 負け\nチョキ vs パー: 勝ち"
+  },
+  "javascript": {
+   "out": "グー vs グー: あいこ\nグー vs チョキ: 勝ち\nグー vs パー: 負け\nチョキ vs パー: 勝ち"
+  },
+  "c": {
+   "out": "Rock vs Rock: draw\nRock vs Scissors: win\nRock vs Paper: lose\nScissors vs Paper: win"
+  }
+ },
+ "recipe-wordcount": {
+  "python": {
+   "out": "the: 3\nand: 2\nbird: 1\ncat: 1\ndog: 1"
+  },
+  "javascript": {
+   "out": "the: 3\nand: 2\nbird: 1\ncat: 1\ndog: 1"
+  },
+  "c": {
+   "out": "the: 3\ncat: 1\nand: 2\ndog: 1\nbird: 1"
+  }
+ },
+ "recipe-primes": {
+  "python": {
+   "out": "[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]"
+  },
+  "javascript": {
+   "out": "[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]"
+  },
+  "c": {
+   "out": "[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]"
+  }
+ },
+ "recipe-fibonacci": {
+  "python": {
+   "out": "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]"
+  },
+  "javascript": {
+   "out": "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]"
+  },
+  "c": {
+   "out": "[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]"
+  }
+ },
+ "recipe-temperature": {
+  "python": {
+   "out": "0°C = 32.0°F\n10°C = 50.0°F\n20°C = 68.0°F\n30°C = 86.0°F\n40°C = 104.0°F"
+  },
+  "javascript": {
+   "out": "0°C = 32.0°F\n10°C = 50.0°F\n20°C = 68.0°F\n30°C = 86.0°F\n40°C = 104.0°F"
+  },
+  "c": {
+   "out": "0 C = 32.0 F\n10 C = 50.0 F\n20 C = 68.0 F\n30 C = 86.0 F\n40 C = 104.0 F"
+  }
+ },
+ "recipe-receipt": {
+  "python": {
+   "out": "りんご 120円 x 3 = 360円\nみかん 80円 x 5 = 400円\nぶどう 450円 x 1 = 450円\n小計: 1210円\n税(10%): 121円\n合計: 1331円"
+  },
+  "javascript": {
+   "out": "りんご 120円 x 3 = 360円\nみかん 80円 x 5 = 400円\nぶどう 450円 x 1 = 450円\n小計: 1210円\n税(10%): 121円\n合計: 1331円"
+  },
+  "c": {
+   "out": "apple 120 yen x 3 = 360 yen\norange 80 yen x 5 = 400 yen\ngrape 450 yen x 1 = 450 yen\nsubtotal: 1210 yen\ntax(10%): 121 yen\ntotal: 1331 yen"
+  }
+ },
+ "recipe-guess": {
+  "python": {
+   "out": "50: 大きい\n25: 小さい\n37: 正解! (3回)"
+  },
+  "javascript": {
+   "out": "50: 大きい\n25: 小さい\n37: 正解! (3回)"
+  },
+  "c": {
+   "out": "50: too big\n25: too small\n37: correct! (3 tries)"
+  }
+ },
+ "recipe-todo": {
+  "python": {
+   "out": "1. 牛乳を買う [ ]\n2. 宿題をする [x]\n3. 掃除する [ ]"
+  },
+  "javascript": {
+   "out": "1. 牛乳を買う [ ]\n2. 宿題をする [x]\n3. 掃除する [ ]"
+  },
+  "c": {
+   "out": "1. buy milk [ ]\n2. homework [x]\n3. clean up [ ]"
+  }
  }
 }

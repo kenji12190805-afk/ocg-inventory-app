@@ -37,5 +37,14 @@
  "ternary": true,
  "stats": true,
  "reverse": true,
- "count": true
+ "count": true,
+ "recipe-grades": true,
+ "recipe-janken": true,
+ "recipe-wordcount": true,
+ "recipe-primes": true,
+ "recipe-fibonacci": true,
+ "recipe-temperature": true,
+ "recipe-receipt": true,
+ "recipe-guess": true,
+ "recipe-todo": true
 }

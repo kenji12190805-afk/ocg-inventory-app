@@ -1,0 +1,90 @@
+=== meta
+{"id":"recipe-guess","kind":"recipe","category":"作ってみよう","title":"数当てゲーム(二分探索)","summary":"1〜100の中の「37」を、「大きい / 小さい」のヒントだけで、最短で当てる。毎回、真ん中を選ぶ。","uses":["while","if","math","break","variables"],"keywords":["数当て","数当てゲーム","二分探索","バイナリサーチ","ゲーム","大きい","小さい","ヒント","アルゴリズム","ミニアプリ","作ってみよう","レシピ"],
+"notes":{"python":"while True + if / elif / else + break の組み合わせ。真ん中は (low + high) // 2(整数の割り算)。","javascript":"while (true) + if + break の組み合わせ。真ん中は Math.floor((low + high) / 2)。","c":"while (1) + if + break の組み合わせ。整数どうしの / は切り捨てなので、そのまま真ん中になる。","kotlin":"while (true) + if + break の組み合わせ。整数どうしの / は切り捨て。"}}
+=== python
+secret = 37
+low, high = 1, 100
+tries = 0
+
+while True:
+    mid = (low + high) // 2
+    tries += 1
+    if mid == secret:
+        print(f"{mid}: 正解! ({tries}回)")
+        break
+    elif mid > secret:
+        print(f"{mid}: 大きい")
+        high = mid - 1
+    else:
+        print(f"{mid}: 小さい")
+        low = mid + 1
+=== javascript
+const secret = 37;
+let low = 1;
+let high = 100;
+let tries = 0;
+
+while (true) {
+  const mid = Math.floor((low + high) / 2);
+  tries++;
+  if (mid === secret) {
+    console.log(`${mid}: 正解! (${tries}回)`);
+    break;
+  } else if (mid > secret) {
+    console.log(`${mid}: 大きい`);
+    high = mid - 1;
+  } else {
+    console.log(`${mid}: 小さい`);
+    low = mid + 1;
+  }
+}
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int secret = 37;
+    int low = 1;
+    int high = 100;
+    int tries = 0;
+    while (1) {
+        int mid = (low + high) / 2;
+        tries++;
+        if (mid == secret) {
+            printf("%d: correct! (%d tries)\n", mid, tries);
+            break;
+        } else if (mid > secret) {
+            printf("%d: too big\n", mid);
+            high = mid - 1;
+        } else {
+            printf("%d: too small\n", mid);
+            low = mid + 1;
+        }
+    }
+    return 0;
+}
+=== kotlin
+fun main() {
+    val secret = 37
+    var low = 1
+    var high = 100
+    var tries = 0
+
+    while (true) {
+        val mid = (low + high) / 2
+        tries++
+        if (mid == secret) {
+            println("$mid: 正解! (${tries}回)")
+            break
+        } else if (mid > secret) {
+            println("$mid: 大きい")
+            high = mid - 1
+        } else {
+            println("$mid: 小さい")
+            low = mid + 1
+        }
+    }
+}
+=== kotlin.out
+50: 大きい
+25: 小さい
+37: 正解! (3回)
