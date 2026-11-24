@@ -16,6 +16,12 @@ const picoc = {};
 for (const t of topics) {
   const v = t.variants.c;
   if (!v) continue;
+  if (t.picoc === false) {
+    // メタ情報で「スマホ内の簡易Cエンジンでは動かない」と宣言されている例(関数ポインタなど)
+    picoc[t.id] = false;
+    console.log(`skip picoc ${t.id} (meta: picoc=false)`);
+    continue;
+  }
   const rec = recorded[t.id]?.c;
   if (!rec) {
     console.error(`NG ${t.id}: recorded.json にありません。npm run record を実行してください`);

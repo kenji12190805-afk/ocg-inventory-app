@@ -1,0 +1,65 @@
+=== meta
+{"id":"stats","category":"データ","title":"最大・最小・平均を求める","summary":"[3,9,1,7,5] の、最大・最小・平均。","keywords":["最大","最小","平均","max","min","average","合計","集計","統計","一番大きい","一番小さい","avg","mean"],
+"notes":{"python":"max(リスト)・min(リスト)・sum(リスト) / len(リスト)。","javascript":"Math.max(...配列)・Math.min(...配列)。... で配列を1つずつに展開して渡す。平均は reduce の合計 / length。","c":"C に便利な関数はない。くりかえしで、最大・最小・合計を自分で求める。平均は、合計を double にしてから割る。","kotlin":"リスト.max()・リスト.min()・リスト.average()。"},
+"why":{"python":"空のリストは、長さが 0。0 で割ることになってしまう。","javascript":"Math.max に配列をそのまま渡すと、NaN(数ではない)になる。... で展開して渡す。エラーにならないので気づきにくい。","c":"整数どうしの割り算(sum / 2)は、小数点以下が切り捨てられて 2 になり、それを double に入れても 2.0。(double)sum / 2 のように、割る前に小数にする。","kotlin":"max は関数なので、かっこ () が必要。"}}
+=== python
+nums = [3, 9, 1, 7, 5]
+print(max(nums), min(nums))
+print(sum(nums) / len(nums))
+=== python.bug
+nums = []
+print(sum(nums) / len(nums))
+=== javascript
+const nums = [3, 9, 1, 7, 5];
+console.log(Math.max(...nums), Math.min(...nums));
+console.log(nums.reduce((a, b) => a + b, 0) / nums.length);
+=== javascript.bug
+const nums = [3, 9, 1, 7, 5];
+console.log(Math.max(nums));
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int a[5] = {3, 9, 1, 7, 5};
+    int max = a[0];
+    int min = a[0];
+    int sum = 0;
+    for (int i = 0; i < 5; i++) {
+        if (a[i] > max) {
+            max = a[i];
+        }
+        if (a[i] < min) {
+            min = a[i];
+        }
+        sum += a[i];
+    }
+    printf("%d %d\n", max, min);
+    printf("%.1f\n", (double)sum / 5);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int a[2] = {1, 4};
+    int sum = a[0] + a[1];
+    double avg = sum / 2;
+    printf("%.1f\n", avg);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val nums = listOf(3, 9, 1, 7, 5)
+    println("${nums.max()} ${nums.min()}")
+    println(nums.average())
+}
+=== kotlin.bug
+fun main() {
+    val nums = listOf(3, 9, 1, 7, 5)
+    println(nums.max)
+}
+=== kotlin.out
+9 1
+5.0
+=== kotlin.bug.out
+main.kt:3:18: error: function invocation 'max()' expected.

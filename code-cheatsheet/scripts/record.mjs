@@ -28,7 +28,7 @@ export function runC(code, { quiet = false } = {}) {
   try {
     writeFileSync(join(dir, 'main.c'), code + '\n');
     const env = { ...process.env, LC_ALL: 'C', LANG: 'C', GCC_COLORS: '' };
-    const cc = spawnSync('gcc', ['-std=c11', '-Wall', '-Wextra', ...(quiet ? ['-Wno-unused-variable', '-Wno-unused-but-set-variable'] : []), '-fdiagnostics-color=never', '-o', 'main', 'main.c'], { cwd: dir, env, encoding: 'utf8' });
+    const cc = spawnSync('gcc', ['-std=c11', '-Wall', '-Wextra', ...(quiet ? ['-Wno-unused-variable', '-Wno-unused-but-set-variable'] : []), '-fdiagnostics-color=never', '-o', 'main', 'main.c', '-lm'], { cwd: dir, env, encoding: 'utf8' });
     const compileMsg = (cc.stderr || '').trim();
     if (cc.status !== 0) return { text: compileMsg, failed: true, warnings: compileMsg };
     const run = spawnSync('./main', [], { cwd: dir, env, encoding: 'utf8', timeout: 5000 });

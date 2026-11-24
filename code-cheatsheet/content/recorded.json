@@ -642,5 +642,258 @@
     "failed": true
    }
   }
+ },
+ "inherit": {
+  "python": {
+   "out": "動物は鳴く\nポチはワンと鳴く(芸: 2)",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 12, in <module>\n    print(d.name)\n          ^^^^^^\nAttributeError: 'Dog' object has no attribute 'name'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "動物は鳴く\nポチはワンと鳴く(芸: 2)",
+   "bug": {
+    "text": "ReferenceError: Must call super constructor in derived class before accessing 'this' or returning from derived constructor",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "Pochi knows 2 tricks",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:16:21: error: 'struct Dog' has no member named 'name'\n   16 |     printf(\"%s\\n\", d.name);\n      |                     ^",
+    "failed": true
+   }
+  }
+ },
+ "enum": {
+  "python": {
+   "out": "GREEN 2\nColor.BLUE",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 9, in <module>\n    print(Color.YELLOW)\n          ^^^^^^^^^^^^\nAttributeError: type object 'Color' has no attribute 'YELLOW'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "2\n['RED', 'GREEN', 'BLUE']",
+   "bug": {
+    "text": "TypeError: Cannot assign to read only property 'GREEN' of object '#<Object>'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "1\ngreen",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:6:20: error: 'YELLOW' undeclared (first use in this function)\n    6 |     enum Color c = YELLOW;\n      |                    ^~~~~~\nmain.c:6:20: note: each undeclared identifier is reported only once for each function it appears in",
+    "failed": true
+   }
+  }
+ },
+ "grid": {
+  "python": {
+   "out": "6\n[1, 2, 3]\n[4, 5, 6]\n2 3",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(grid[2][0])\n          ~~~~^^^\nIndexError: list index out of range",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "6\n[1, 2, 3]\n[4, 5, 6]\n2 3",
+   "bug": {
+    "text": "TypeError: Cannot read properties of undefined (reading '0')",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "6\n1 2 3\n4 5 6",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:4:9: error: array type has incomplete element type 'int[]'\n    4 |     int grid[2][] = {{1, 2, 3}, {4, 5, 6}};\n      |         ^~~~\nmain.c:4:9: note: declaration of 'grid' as multidimensional array must have bounds for all dimensions except the first",
+    "failed": true
+   }
+  }
+ },
+ "set": {
+  "python": {
+   "out": "[1, 2, 3]\n3\nTrue",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(s[0])\n          ~^^^\nTypeError: 'set' object is not subscriptable",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "[1, 2, 3]\n3\ntrue",
+   "bug": {
+    "text": "TypeError: s.push is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "count: 3\n1\n2\n3",
+   "bug": {
+    "text": "count: 2",
+    "failed": false
+   }
+  }
+ },
+ "lambda": {
+  "python": {
+   "out": "10\n6\n[1, 4, 9]",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 9, in <module>\n    print(apply_to(double(5), 5))\n          ~~~~~~~~^^^^^^^^^^^^^^\n  File \"main.py\", line 6, in apply_to\n    return f(x)\nTypeError: 'int' object is not callable",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "10\n6\n[1, 4, 9]",
+   "bug": {
+    "text": "TypeError: f is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "10\n25",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:12:29: warning: passing argument 1 of 'apply_to' makes pointer from integer without a cast [-Wint-conversion]\n   12 |     printf(\"%d\\n\", apply_to(twice(5), 5));\n      |                             ^~~~~~~~\n      |                             |\n      |                             int\nmain.c:7:20: note: expected 'int (*)(int)' but argument is of type 'int'\n    7 | int apply_to(int (*f)(int), int v) {\n      |              ~~~~~~^~~~~~~\nSegmentation fault",
+    "failed": true
+   }
+  }
+ },
+ "rounding": {
+  "python": {
+   "out": "3.14\n4.0\n1024\n5\n3 4",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 3, in <module>\n    print(math.sqrt(-1))\n          ~~~~~~~~~^^^^\nValueError: expected a nonnegative input, got -1.0",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "3.14\n4\n1024\n5\n3 4",
+   "bug": {
+    "text": "NaN",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "3.14\n4.0\n1024\n5\n3 4",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:22: error: too few arguments to function 'sqrt'\n    5 |     printf(\"%.1f\\n\", sqrt());\n      |                      ^~~~\nIn file included from /usr/include/features.h:502,\n                 from /usr/include/x86_64-linux-gnu/bits/libc-header-start.h:33,\n                 from /usr/include/stdio.h:28,\n                 from main.c:1:\n/usr/include/x86_64-linux-gnu/bits/mathcalls.h:143:1: note: declared here\n  143 | __MATHCALL (sqrt,, (_Mdouble_ __x));\n      | ^~~~~~~~~~",
+    "failed": true
+   }
+  }
+ },
+ "strcompare": {
+  "python": {
+   "out": "False\nTrue\nTrue",
+   "bug": {
+    "text": "  File \"main.py\", line 3\n    if a = b:\n       ^^^^^\nSyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "false\ntrue\ntrue",
+   "bug": {
+    "text": "同じ",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "0\n1\n1",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:6:22: warning: comparison between two arrays [-Warray-compare]\n    6 |     printf(\"%d\\n\", a == c);\n      |                      ^~\nmain.c:6:22: note: use '&a[0] == &c[0]' to compare the addresses\n0",
+    "failed": false
+   }
+  }
+ },
+ "ternary": {
+  "python": {
+   "out": "大人",
+   "bug": {
+    "text": "  File \"main.py\", line 2\n    label = age >= 18 ? \"大人\" : \"子供\"\n                      ^\nSyntaxError: invalid syntax",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "大人",
+   "bug": {
+    "text": "SyntaxError: Unexpected token ';'",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "adult",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:5:39: error: expected ':' before ')' token\n    5 |     printf(\"%s\\n\", age >= 18 ? \"adult\");\n      |                                       ^\n      |                                       :",
+    "failed": true
+   }
+  }
+ },
+ "stats": {
+  "python": {
+   "out": "9 1\n5.0",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(sum(nums) / len(nums))\n          ~~~~~~~~~~^~~~~~~~~~~\nZeroDivisionError: division by zero",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "9 1\n5",
+   "bug": {
+    "text": "NaN",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "9 1\n5.0",
+   "bug": {
+    "text": "2.0",
+    "failed": false
+   }
+  }
+ },
+ "reverse": {
+  "python": {
+   "out": "olleh\nFalse\nTrue",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 2, in <module>\n    print(s.reverse())\n          ^^^^^^^^^\nAttributeError: 'str' object has no attribute 'reverse'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "olleh\nfalse\ntrue",
+   "bug": {
+    "text": "TypeError: s.reverse is not a function",
+    "failed": true
+   }
+  },
+  "c": {
+   "out": "olleh",
+   "bug": {
+    "text": "hello",
+    "failed": false
+   }
+  }
+ },
+ "count": {
+  "python": {
+   "out": "3\n{'b': 1, 'a': 3, 'n': 2}",
+   "bug": {
+    "text": "Traceback (most recent call last):\n  File \"main.py\", line 4, in <module>\n    counts[ch] += 1\n    ~~~~~~^^^^\nKeyError: 'b'",
+    "failed": true
+   }
+  },
+  "javascript": {
+   "out": "3\n{ b: 1, a: 3, n: 2 }",
+   "bug": {
+    "text": "{ b: NaN, a: NaN, n: NaN }",
+    "failed": false
+   }
+  },
+  "c": {
+   "out": "3",
+   "bug": {
+    "text": "main.c: In function 'main':\nmain.c:7:18: warning: comparison between pointer and integer\n    7 |         if (s[i] == \"a\") {\n      |                  ^~\nmain.c:7:18: warning: comparison with string literal results in unspecified behavior [-Waddress]\n0",
+    "failed": false
+   }
+  }
  }
 }

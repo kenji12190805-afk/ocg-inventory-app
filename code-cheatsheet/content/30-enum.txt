@@ -1,0 +1,79 @@
+=== meta
+{"id":"enum","category":"データ","title":"決まった選択肢に名前をつける (列挙型 enum)","summary":"赤・緑・青のような、決まった中から選ぶ値に名前をつける。","keywords":["enum","列挙型","列挙","選択肢","定数","名前つき定数","Enum","色","状態","種類"],
+"notes":{"python":"enum の Enum を引きついだクラスで作る。c.name は名前、c.value は値。","javascript":"JavaScript に enum はない。Object.freeze({…}) で、書き換えられないオブジェクトを作って代わりにする。","c":"enum 名 { A, B, C }; と書く。中身は 0 から順に整数になる。","kotlin":"enum class 名 { A, B, C } と書く。ordinal は番号、values() で全部のリスト。"},
+"why":{"python":"Color に YELLOW という名前はない。enum では、定義した名前だけが使える。","javascript":"Object.freeze したオブジェクトは、あとから書き換えられない(strict mode ではエラーになる)。","c":"enum に YELLOW は定義されていないので、名前が見つからない。","kotlin":"Color に YELLOW という名前はない。enum では、定義した名前だけが使える。"}}
+=== python
+from enum import Enum
+
+
+class Color(Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+
+c = Color.GREEN
+print(c.name, c.value)
+print(Color(3))
+=== python.bug
+from enum import Enum
+
+
+class Color(Enum):
+    RED = 1
+    GREEN = 2
+
+
+print(Color.YELLOW)
+=== javascript
+const Color = Object.freeze({ RED: 1, GREEN: 2, BLUE: 3 });
+console.log(Color.GREEN);
+console.log(Object.keys(Color));
+=== javascript.bug
+const Color = Object.freeze({ RED: 1, GREEN: 2, BLUE: 3 });
+Color.GREEN = 5;
+console.log(Color.GREEN);
+=== c
+#include <stdio.h>
+
+enum Color { RED, GREEN, BLUE };
+
+int main(void) {
+    enum Color c = GREEN;
+    printf("%d\n", c);
+    if (c == GREEN) {
+        printf("green\n");
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+enum Color { RED, GREEN, BLUE };
+
+int main(void) {
+    enum Color c = YELLOW;
+    printf("%d\n", c);
+    return 0;
+}
+=== kotlin
+enum class Color { RED, GREEN, BLUE }
+
+fun main() {
+    val c = Color.GREEN
+    println(c)
+    println(c.ordinal)
+    println(Color.values().joinToString())
+}
+=== kotlin.bug
+enum class Color { RED, GREEN, BLUE }
+
+fun main() {
+    println(Color.YELLOW)
+}
+=== kotlin.out
+GREEN
+1
+RED, GREEN, BLUE
+=== kotlin.bug.out
+main.kt:4:19: error: unresolved reference 'YELLOW'.

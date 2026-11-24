@@ -1,0 +1,69 @@
+=== meta
+{"id":"reverse","category":"基本","title":"文字列を逆さにする・回文を調べる","summary":"\"hello\" を \"olleh\" にする。前から読んでも後ろから読んでも同じ(回文)か調べる。","keywords":["逆さ","逆","reverse","反転","回文","palindrome","reversed","後ろから","ひっくり返す","文字列"],
+"notes":{"python":"s[::-1] で逆さにできる(スライスの刻み幅を -1 にする)。","javascript":"文字列に reverse はない。[...s] で1文字ずつの配列にして、reverse() して、join(\"\") でもどす。","c":"最初と最後、次と最後から2番目…と、真ん中まで入れ替える(n / 2 回)。","kotlin":"s.reversed() で逆さにした文字列が返る。"},
+"why":{"python":"Python の文字列に reverse() はない。s[::-1] を使う。","javascript":"JavaScript の文字列に reverse() はない。配列にしてから reverse する。","c":"n 回(全部)入れ替えると、真ん中を過ぎてからもう一度入れ替えて、元にもどってしまう。入れ替えは n / 2 回でいい。","kotlin":"reverse ではなく reversed。語尾が違うだけで別の名前。"}}
+=== python
+s = "hello"
+print(s[::-1])
+print(s == s[::-1])
+print("level" == "level"[::-1])
+=== python.bug
+s = "hello"
+print(s.reverse())
+=== javascript
+const s = "hello";
+const rev = [...s].reverse().join("");
+console.log(rev);
+console.log(s === rev);
+console.log("level" === [..."level"].reverse().join(""));
+=== javascript.bug
+const s = "hello";
+console.log(s.reverse());
+=== c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char s[] = "hello";
+    int n = strlen(s);
+    for (int i = 0; i < n / 2; i++) {
+        char t = s[i];
+        s[i] = s[n - 1 - i];
+        s[n - 1 - i] = t;
+    }
+    printf("%s\n", s);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char s[] = "hello";
+    int n = strlen(s);
+    for (int i = 0; i < n; i++) {
+        char t = s[i];
+        s[i] = s[n - 1 - i];
+        s[n - 1 - i] = t;
+    }
+    printf("%s\n", s);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val s = "hello"
+    println(s.reversed())
+    println(s == s.reversed())
+    println("level" == "level".reversed())
+}
+=== kotlin.bug
+fun main() {
+    val s = "hello"
+    println(s.reverse())
+}
+=== kotlin.out
+olleh
+false
+true
+=== kotlin.bug.out
+main.kt:3:15: error: unresolved reference 'reverse'.

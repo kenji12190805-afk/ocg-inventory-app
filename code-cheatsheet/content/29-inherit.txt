@@ -1,0 +1,142 @@
+=== meta
+{"id":"inherit","category":"関数とクラス","title":"クラスを引きつぐ (継承)","summary":"「動物」を引きついだ「犬」を作って、鳴き方だけ変える。","keywords":["継承","inherit","extends","super","親クラス","子クラス","サブクラス","スーパークラス","override","オーバーライド","引きつぐ","クラス","オブジェクト指向","open"],
+"notes":{"python":"class 子(親): と書く。親の初期化は super().__init__(…) で呼ぶ。同じ名前のメソッドを書くと、上書きできる。","javascript":"class 子 extends 親 と書く。子の constructor では、this を使う前に super(…) を呼ぶ。","c":"C には継承がない。かわりに、親にあたる struct を、子の struct の中に入れる(そのメンバーは d.base.name のように使う)。","kotlin":"引きつがれるクラスには open が必要(なければ final で引きつげない)。上書きするメソッドも open と override をつける。"},
+"why":{"python":"子の __init__ で super().__init__(…) を呼んでいないので、親が作るはずの name ができていない。","javascript":"子の constructor では、this を使う前に super(…) を呼ぶ必要がある。","c":"name は Dog の直接のメンバーではなく、Dog の中の base(Animal)のメンバー。d.base.name と書く。","kotlin":"Animal に open がないので、引きつげない(Kotlin のクラスは、初期設定では引きつげない)。"}}
+=== python
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+    def speak(self):
+        print(f"{self.name}は鳴く")
+
+
+class Dog(Animal):
+    def __init__(self, name, tricks):
+        super().__init__(name)
+        self.tricks = tricks
+
+    def speak(self):
+        print(f"{self.name}はワンと鳴く(芸: {self.tricks})")
+
+
+Animal("動物").speak()
+Dog("ポチ", 2).speak()
+=== python.bug
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+
+class Dog(Animal):
+    def __init__(self, tricks):
+        self.tricks = tricks
+
+
+d = Dog(3)
+print(d.name)
+=== javascript
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  speak() {
+    console.log(`${this.name}は鳴く`);
+  }
+}
+
+class Dog extends Animal {
+  constructor(name, tricks) {
+    super(name);
+    this.tricks = tricks;
+  }
+  speak() {
+    console.log(`${this.name}はワンと鳴く(芸: ${this.tricks})`);
+  }
+}
+
+new Animal("動物").speak();
+new Dog("ポチ", 2).speak();
+=== javascript.bug
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name, tricks) {
+    this.tricks = tricks;
+    super(name);
+  }
+}
+
+new Dog("ポチ", 2);
+=== c
+#include <stdio.h>
+#include <string.h>
+
+struct Animal {
+    char name[16];
+};
+
+struct Dog {
+    struct Animal base;
+    int tricks;
+};
+
+int main(void) {
+    struct Dog d;
+    strcpy(d.base.name, "Pochi");
+    d.tricks = 2;
+    printf("%s knows %d tricks\n", d.base.name, d.tricks);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+#include <string.h>
+
+struct Animal {
+    char name[16];
+};
+
+struct Dog {
+    struct Animal base;
+    int tricks;
+};
+
+int main(void) {
+    struct Dog d;
+    strcpy(d.base.name, "Pochi");
+    printf("%s\n", d.name);
+    return 0;
+}
+=== kotlin
+open class Animal(val name: String) {
+    open fun speak() {
+        println("${name}は鳴く")
+    }
+}
+
+class Dog(name: String, val tricks: Int) : Animal(name) {
+    override fun speak() {
+        println("${name}はワンと鳴く(芸: $tricks)")
+    }
+}
+
+fun main() {
+    Animal("動物").speak()
+    Dog("ポチ", 2).speak()
+}
+=== kotlin.bug
+class Animal(val name: String)
+class Dog(name: String) : Animal(name)
+
+fun main() {
+    println(Dog("ポチ").name)
+}
+=== kotlin.out
+動物は鳴く
+ポチはワンと鳴く(芸: 2)
+=== kotlin.bug.out
+main.kt:2:27: error: this type is final, so it cannot be inherited from.

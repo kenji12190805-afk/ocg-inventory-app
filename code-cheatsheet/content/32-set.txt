@@ -1,0 +1,88 @@
+=== meta
+{"id":"set","category":"データ","title":"重複をなくす (集合 set)","summary":"[1,2,2,3,3,3] から、重複をなくして [1,2,3] にする。含まれているかも調べる。","keywords":["set","集合","重複","重複をなくす","ユニーク","unique","distinct","重複削除","重複を消す","セット"],
+"notes":{"python":"set(リスト) で、重複のない集まりになる。順番は決まっていないので、見るときは sorted() で並べる。","javascript":"new Set(配列) で作る。size は個数、has は含むか調べる、[...set] で配列にもどす。","c":"C に set はない。すでに入れたか1つずつ調べて、まだなら足す。","kotlin":"setOf(…) で作る(読み取り専用)。追加したいなら mutableSetOf。"},
+"why":{"python":"set には順番(番号)がないので、s[0] のように番号で取り出せない。","javascript":"Set の追加は push ではなく add。","c":"found を、くりかえしの外で作っているので、1度見つかるとずっと 1 のまま。くりかえしのたびに 0 に戻す必要がある。(エラーにならず、結果だけまちがう)","kotlin":"setOf で作った集合は読み取り専用で、add がない。追加したいなら mutableSetOf を使う。"}}
+=== python
+nums = [1, 2, 2, 3, 3, 3]
+s = set(nums)
+print(sorted(s))
+print(len(s))
+print(2 in s)
+=== python.bug
+s = {1, 2, 3}
+print(s[0])
+=== javascript
+const nums = [1, 2, 2, 3, 3, 3];
+const s = new Set(nums);
+console.log([...s]);
+console.log(s.size);
+console.log(s.has(2));
+=== javascript.bug
+const s = new Set([1, 2, 3]);
+s.push(4);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int nums[6] = {1, 2, 2, 3, 3, 3};
+    int uniq[6];
+    int count = 0;
+    for (int i = 0; i < 6; i++) {
+        int found = 0;
+        for (int j = 0; j < count; j++) {
+            if (uniq[j] == nums[i]) {
+                found = 1;
+            }
+        }
+        if (!found) {
+            uniq[count] = nums[i];
+            count++;
+        }
+    }
+    printf("count: %d\n", count);
+    for (int j = 0; j < count; j++) {
+        printf("%d\n", uniq[j]);
+    }
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int nums[6] = {1, 2, 2, 3, 3, 3};
+    int uniq[6];
+    int count = 0;
+    int found = 0;
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < count; j++) {
+            if (uniq[j] == nums[i]) {
+                found = 1;
+            }
+        }
+        if (!found) {
+            uniq[count] = nums[i];
+            count++;
+        }
+    }
+    printf("count: %d\n", count);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val nums = listOf(1, 2, 2, 3, 3, 3)
+    val s = nums.toSet()
+    println(s)
+    println(s.size)
+    println(2 in s)
+}
+=== kotlin.bug
+fun main() {
+    val s = setOf(1, 2, 3)
+    s.add(4)
+}
+=== kotlin.out
+[1, 2, 3]
+3
+true
+=== kotlin.bug.out
+main.kt:3:7: error: unresolved reference 'add'.

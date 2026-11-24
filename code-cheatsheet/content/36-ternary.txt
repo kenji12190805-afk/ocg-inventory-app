@@ -1,0 +1,52 @@
+=== meta
+{"id":"ternary","category":"制御","title":"条件で値を選ぶ (条件式・三項演算子)","summary":"年齢が18以上なら「大人」、そうでなければ「子供」を、1行で選ぶ。","keywords":["三項演算子","条件式","条件演算子","ternary","?:","1行","if","短く","値を選ぶ","条件で値"],
+"notes":{"python":"値 if 条件 else 別の値 の順番(他の言語と並びがちがう)。","javascript":"条件 ? 値 : 別の値。Python と並びがちがうので注意。","c":"条件 ? 値 : 別の値。printf の中にも直接書ける。","kotlin":"Kotlin に ? : はない。if が「式」なので、if (条件) 値 else 別の値 と書ける。"},
+"why":{"python":"Python には ? : の書き方はない。値 if 条件 else 別の値 と書く。","javascript":": 以降(そうでない場合の値)がない。? を使うなら、: も必要。","c":": 以降(そうでない場合の値)がない。? を使うなら、: も必要。","kotlin":"if を値として使うのに、else がない。値が決まらない場合があるのでエラーになる。"}}
+=== python
+age = 20
+label = "大人" if age >= 18 else "子供"
+print(label)
+=== python.bug
+age = 20
+label = age >= 18 ? "大人" : "子供"
+print(label)
+=== javascript
+const age = 20;
+const label = age >= 18 ? "大人" : "子供";
+console.log(label);
+=== javascript.bug
+const age = 20;
+const label = age >= 18 ? "大人";
+console.log(label);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+    printf("%s\n", age >= 18 ? "adult" : "child");
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    int age = 20;
+    printf("%s\n", age >= 18 ? "adult");
+    return 0;
+}
+=== kotlin
+fun main() {
+    val age = 20
+    val label = if (age >= 18) "大人" else "子供"
+    println(label)
+}
+=== kotlin.bug
+fun main() {
+    val age = 20
+    val label = if (age >= 18) "大人"
+    println(label)
+}
+=== kotlin.out
+大人
+=== kotlin.bug.out
+main.kt:3:17: error: 'if' must have both main and 'else' branches if used as an expression.

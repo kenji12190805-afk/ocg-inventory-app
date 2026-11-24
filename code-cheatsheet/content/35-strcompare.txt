@@ -1,0 +1,72 @@
+=== meta
+{"id":"strcompare","category":"基本","title":"文字列を比べる (同じか・大文字小文字・順番)","summary":"2つの文字列が同じか、大文字小文字を無視して同じか、辞書の順で先か、を調べる。","keywords":["文字列","比較","比べる","同じ","等しい","==","equals","strcmp","大文字小文字","ignoreCase","辞書順","並び順","一致"],
+"notes":{"python":"== で中身を比べられる。大文字小文字を無視するなら、両方を lower() にそろえてから比べる。< で辞書の順も比べられる。","javascript":"=== で比べる。大文字小文字を無視するなら toLowerCase() にそろえる。< で辞書の順も比べられる。","c":"文字列は == で比べてはいけない。strcmp(a, b) を使う(同じなら 0)。<string.h> が必要。","kotlin":"== で中身を比べられる。大文字小文字を無視するなら equals(b, ignoreCase = true)。< で辞書の順も比べられる。"},
+"why":{"python":"if の条件に = (代入)は書けない。比べるなら == を使う。","javascript":"if (a = b) は比較ではなく、代入。b を a に入れて、その値(空でない文字)が真と見なされるので、いつも「同じ」になってしまう。エラーにならないので気づきにくい。","c":"配列どうしを == で比べると、「中身」ではなく「場所(アドレス)」を比べる。別の配列なので、中身が同じでも 0(ちがう)になる。","kotlin":"文字列(String)と数値(Int)は、== で比べられない。"}}
+=== python
+a = "apple"
+b = "Apple"
+print(a == b)
+print(a.lower() == b.lower())
+print(a < "banana")
+=== python.bug
+a = "apple"
+b = "Apple"
+if a = b:
+    print("同じ")
+=== javascript
+const a = "apple";
+const b = "Apple";
+console.log(a === b);
+console.log(a.toLowerCase() === b.toLowerCase());
+console.log(a < "banana");
+=== javascript.bug
+let a = "apple";
+let b = "Apple";
+if (a = b) {
+  console.log("同じ");
+} else {
+  console.log("ちがう");
+}
+=== c
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char a[] = "apple";
+    char b[] = "Apple";
+    char c[] = "apple";
+    printf("%d\n", strcmp(a, b) == 0);
+    printf("%d\n", strcmp(a, c) == 0);
+    printf("%d\n", strcmp(a, "banana") < 0);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char a[] = "apple";
+    char c[] = "apple";
+    printf("%d\n", a == c);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val a = "apple"
+    val b = "Apple"
+    println(a == b)
+    println(a.equals(b, ignoreCase = true))
+    println(a < "banana")
+}
+=== kotlin.bug
+fun main() {
+    val a = "apple"
+    if (a == 5) {
+        println("same")
+    }
+}
+=== kotlin.out
+false
+true
+true
+=== kotlin.bug.out
+main.kt:3:9: error: operator '==' cannot be applied to 'String' and 'Int'.

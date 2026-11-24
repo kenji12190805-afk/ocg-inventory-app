@@ -45,4 +45,10 @@ export const javascript: Entry[] = [
   { l: 'typeof', t: 'typeof ${1:x}', m: '値の型(number や string など)を調べる。', w: ['typeof'], a: ['型', 'タイプ'] },
   { l: 'Object.entries', t: 'for (const [${1:key}, ${2:value}] of Object.entries(${3:ages})) {\n  console.log(${1}, ${2});\n}', m: 'オブジェクトの「キー」と「値」を、1組ずつ取り出す。', w: ['entries', 'Object'], a: ['辞書', 'キーと値'] },
   { l: 'JSON', t: 'JSON.parse(${1:text})', m: 'JSON.parse は文字→オブジェクト、JSON.stringify はオブジェクト→文字。形が正しくないとエラー。', w: ['JSON', 'parse', 'stringify'], a: ['json', 'データ'] },
+  { l: 'extends', t: 'class ${1:Dog} extends ${2:Animal} {\n  constructor(${3:name}) {\n    super(${3});\n  }\n}', m: '親クラスを引きついだ子クラスを作る。constructor では、this を使う前に super(…) を呼ぶ。', w: ['extends', 'super'], a: ['継承', 'inherit', '親クラス', '子クラス', '引きつぐ'] },
+  { l: 'Object.freeze (enum)', t: 'const ${1:Color} = Object.freeze({ ${2:RED: 1, GREEN: 2, BLUE: 3} });', m: '書き換えられないオブジェクトを作る。JavaScript に enum はないので、これで代わりにする。', w: ['freeze'], a: ['enum', '列挙型', '選択肢', '定数'] },
+  { l: 'Set', t: 'const ${1:s} = new Set(${2:nums});', m: '重複をなくした集まり(集合)を作る。size は個数、has は含むか、[...s] で配列にもどす。', w: ['Set', 'has'], a: ['集合', '重複', '重複をなくす', 'ユニーク', 'セット'] },
+  { l: '条件演算子 (? :)', t: '${1:age >= 18} ? ${2:"大人"} : ${3:"子供"}', m: '条件で値を選ぶ。「条件 ? 値 : 別の値」。', a: ['三項演算子', '条件式', 'ternary', '1行', '値を選ぶ'] },
+  { l: '2次元配列', t: 'const ${1:grid} = [[${2:1, 2, 3}], [${3:4, 5, 6}]];\nconsole.log(${1}[1][2]);', m: '配列の中に配列を入れた表。grid[行][列] で取り出す(どちらも0から)。', a: ['2次元配列', '二次元', '表', 'マス目', 'グリッド', '行列'] },
+  { l: '文字列を逆さに', t: '[...${1:s}].reverse().join("")', m: '文字列に reverse はない。1文字ずつの配列にして、reverse して、join でもどす。', w: ['reverse'], a: ['逆さ', 'reverse', '反転', '回文', '後ろから'] },
 ];

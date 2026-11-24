@@ -1,0 +1,108 @@
+=== meta
+{"id":"lambda","category":"関数とクラス","title":"関数を値として渡す (ラムダ・コールバック)","summary":"「2倍にする関数」を、別の関数に渡して使わせる。名前のない短い関数(ラムダ)も使う。","keywords":["ラムダ","lambda","コールバック","callback","関数を渡す","高階関数","関数を値","アロー関数","無名関数","関数ポインタ","引数に関数","map","クロージャ"],
+"notes":{"python":"関数の名前に ( ) をつけずに渡すと、関数そのものを渡せる。lambda 引数: 結果 で、名前のない関数も作れる。","javascript":"関数は値なので、そのまま渡せる。アロー関数 (n) => n + 1 が短くて便利。","c":"関数ポインタ int (*f)(int) で、関数を引数として受け取れる。(このアプリ内の簡易Cエンジンでは動かない。gcc の結果だけ見られる)","kotlin":"関数の型は (Int) -> Int のように書く。::関数名 で関数を渡せて、{ n -> n + 1 } でラムダを書ける。"},
+"why":{"python":"double(5) と書くと、関数を呼んだ「結果(10)」を渡してしまう。関数そのものを渡すなら double と書く。","javascript":"double(5) と書くと、関数を呼んだ「結果(10)」を渡してしまう。関数そのものを渡すなら double と書く。","c":"twice(5) と書くと、関数を呼んだ「結果(整数)」を渡してしまう。関数そのものを渡すなら twice と書く。(gcc の新しい版ではコンパイルエラーになる)","kotlin":"double(5) と書くと、関数を呼んだ「結果(Int)」を渡してしまう。関数そのものなら ::double と書く。"},
+"picoc": false}
+=== python
+def double(n):
+    return n * 2
+
+
+def apply_to(f, x):
+    return f(x)
+
+
+print(apply_to(double, 5))
+print(apply_to(lambda n: n + 1, 5))
+print(list(map(lambda n: n * n, [1, 2, 3])))
+=== python.bug
+def double(n):
+    return n * 2
+
+
+def apply_to(f, x):
+    return f(x)
+
+
+print(apply_to(double(5), 5))
+=== javascript
+function double(n) {
+  return n * 2;
+}
+
+function applyTo(f, x) {
+  return f(x);
+}
+
+console.log(applyTo(double, 5));
+console.log(applyTo((n) => n + 1, 5));
+console.log([1, 2, 3].map((n) => n * n));
+=== javascript.bug
+function double(n) {
+  return n * 2;
+}
+
+function applyTo(f, x) {
+  return f(x);
+}
+
+console.log(applyTo(double(5), 5));
+=== c
+#include <stdio.h>
+
+int twice(int x) {
+    return x * 2;
+}
+
+int square(int x) {
+    return x * x;
+}
+
+int apply_to(int (*f)(int), int v) {
+    return f(v);
+}
+
+int main(void) {
+    printf("%d\n", apply_to(twice, 5));
+    printf("%d\n", apply_to(square, 5));
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int twice(int x) {
+    return x * 2;
+}
+
+int apply_to(int (*f)(int), int v) {
+    return f(v);
+}
+
+int main(void) {
+    printf("%d\n", apply_to(twice(5), 5));
+    return 0;
+}
+=== kotlin
+fun double(n: Int) = n * 2
+
+fun applyTo(f: (Int) -> Int, x: Int) = f(x)
+
+fun main() {
+    println(applyTo(::double, 5))
+    println(applyTo({ n -> n + 1 }, 5))
+    println(listOf(1, 2, 3).map { it * it })
+}
+=== kotlin.bug
+fun double(n: Int) = n * 2
+
+fun applyTo(f: (Int) -> Int, x: Int) = f(x)
+
+fun main() {
+    println(applyTo(double(5), 5))
+}
+=== kotlin.out
+10
+6
+[1, 4, 9]
+=== kotlin.bug.out
+main.kt:6:21: error: argument type mismatch: actual type is 'Int', but '(Int) -> Int' was expected.

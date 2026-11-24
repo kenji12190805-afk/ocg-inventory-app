@@ -1,0 +1,69 @@
+=== meta
+{"id":"rounding","category":"基本","title":"丸める・平方根・累乗・絶対値","summary":"小数を丸める、√16、2の10乗、絶対値、切り捨て・切り上げ。","keywords":["丸める","四捨五入","round","平方根","sqrt","ルート","累乗","べき乗","pow","絶対値","abs","切り捨て","切り上げ","floor","ceil","math","数学","小数"],
+"notes":{"python":"数学の道具は import math で使う。round(数, 桁) で丸める。** はべき乗、abs は絶対値。","javascript":"数学の道具は Math にまとまっている(Math.sqrt、Math.floor など)。小数2桁に丸めるなら Math.round(x * 100) / 100。","c":"<math.h> が必要(sqrt・pow・floor・ceil)。abs は <stdlib.h>。小数は %f で、%.2f は小数2桁。","kotlin":"import kotlin.math.* で使えるようになる(sqrt・abs・floor・ceil)。累乗は 2.0.pow(10)。小数2桁は \"%.2f\".format(x)。"},
+"why":{"python":"負の数の平方根は、実数の範囲では計算できない。","javascript":"JavaScript は、負の数の平方根でエラーにならず、NaN(数ではない)になる。","c":"sqrt には引数が必要。","kotlin":"sqrt は kotlin.math の部品。import kotlin.math.* を書かないと見つからない。"}}
+=== python
+import math
+
+print(round(3.14159, 2))
+print(math.sqrt(16))
+print(2 ** 10)
+print(abs(-5))
+print(math.floor(3.7), math.ceil(3.2))
+=== python.bug
+import math
+
+print(math.sqrt(-1))
+=== javascript
+console.log(Math.round(3.14159 * 100) / 100);
+console.log(Math.sqrt(16));
+console.log(2 ** 10);
+console.log(Math.abs(-5));
+console.log(Math.floor(3.7), Math.ceil(3.2));
+=== javascript.bug
+console.log(Math.sqrt(-1));
+=== c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int main(void) {
+    printf("%.2f\n", 3.14159);
+    printf("%.1f\n", sqrt(16.0));
+    printf("%.0f\n", pow(2.0, 10.0));
+    printf("%d\n", abs(-5));
+    printf("%.0f %.0f\n", floor(3.7), ceil(3.2));
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+#include <math.h>
+
+int main(void) {
+    printf("%.1f\n", sqrt());
+    return 0;
+}
+=== kotlin
+import kotlin.math.*
+
+fun main() {
+    println("%.2f".format(3.14159))
+    println(sqrt(16.0))
+    println(2.0.pow(10))
+    println(abs(-5))
+    println(floor(3.7))
+    println(ceil(3.2))
+}
+=== kotlin.bug
+fun main() {
+    println(sqrt(16.0))
+}
+=== kotlin.out
+3.14
+4.0
+1024.0
+5
+3.0
+4.0
+=== kotlin.bug.out
+main.kt:2:13: error: unresolved reference 'sqrt'.

@@ -1,0 +1,76 @@
+=== meta
+{"id":"count","category":"データ","title":"出てきた回数を数える","summary":"\"banana\" の中に a が何回あるか。文字ごとの回数も数える。","keywords":["数える","カウント","count","出現回数","回数","頻度","何回","集計","Counter","eachCount","文字数える","ヒストグラム"],
+"notes":{"python":"文字列.count(\"a\") で回数がわかる。全部の文字を数えるなら、辞書に get(キー, 0) + 1 を入れていく。","javascript":"split(\"a\").length - 1 でも数えられる。全部の文字なら、オブジェクトに (counts[ch] ?? 0) + 1 を入れていく。","c":"1文字ずつ見て、一致したら count++。1文字は ' ' で囲む(\" \" は文字列)。","kotlin":"count { 条件 } で、条件に合う文字の数。全部の文字は groupingBy { it }.eachCount()。"},
+"why":{"python":"辞書に入れていないキーを、いきなり += 1 しようとした。最初の1回は、get(キー, 0) + 1 のように 0 から始める。","javascript":"まだないキーは undefined で、undefined + 1 は NaN(数ではない)。エラーにならないので気づきにくい。(counts[ch] ?? 0) + 1 と書く。","c":"s[i] は1文字(整数)、\"a\" は文字列。比べるものの種類がちがうので、いつも「ちがう」になってしまう。1文字は 'a' と書く。","kotlin":"counts ではなく count。名前が1文字ちがうだけで別物。"}}
+=== python
+s = "banana"
+print(s.count("a"))
+counts = {}
+for ch in s:
+    counts[ch] = counts.get(ch, 0) + 1
+print(counts)
+=== python.bug
+s = "banana"
+counts = {}
+for ch in s:
+    counts[ch] += 1
+print(counts)
+=== javascript
+const s = "banana";
+console.log(s.split("a").length - 1);
+const counts = {};
+for (const ch of s) {
+  counts[ch] = (counts[ch] ?? 0) + 1;
+}
+console.log(counts);
+=== javascript.bug
+const s = "banana";
+const counts = {};
+for (const ch of s) {
+  counts[ch] += 1;
+}
+console.log(counts);
+=== c
+#include <stdio.h>
+
+int main(void) {
+    char s[] = "banana";
+    int count = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == 'a') {
+            count++;
+        }
+    }
+    printf("%d\n", count);
+    return 0;
+}
+=== c.bug
+#include <stdio.h>
+
+int main(void) {
+    char s[] = "banana";
+    int count = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        if (s[i] == "a") {
+            count++;
+        }
+    }
+    printf("%d\n", count);
+    return 0;
+}
+=== kotlin
+fun main() {
+    val s = "banana"
+    println(s.count { it == 'a' })
+    println(s.groupingBy { it }.eachCount())
+}
+=== kotlin.bug
+fun main() {
+    val s = "banana"
+    println(s.counts { it == 'a' })
+}
+=== kotlin.out
+3
+{b=1, a=3, n=2}
+=== kotlin.bug.out
+main.kt:3:15: error: unresolved reference 'counts'.

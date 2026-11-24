@@ -61,7 +61,7 @@ for (const e of DICT.javascript) {
 // ---- C ----
 {
   const dir = mkdtempSync(join(tmpdir(), 'dict-'));
-  const prelude = '#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include <ctype.h>\n';
+  const prelude = '#include <stdio.h>\n#include <string.h>\n#include <stdlib.h>\n#include <ctype.h>\n#include <math.h>\n';
   const locals =
     'int x = 1, n = 1, a = 1, b = 1, age = 30, day = 1, has_ticket = 1, count = 0; double d = 1.5; char s[64] = "Hello"; char dest[64] = ""; char name[32] = "Kenji"; int scores[3] = {1, 2, 3}; int *p = &n; int ages[3] = {1, 2, 3};\n';
   for (const e of DICT.c) {

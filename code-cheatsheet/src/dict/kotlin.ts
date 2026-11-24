@@ -39,4 +39,11 @@ export const kotlin: Entry[] = [
   { l: '.trim', t: '${1:s}.trim()', m: '文字列の前後の空白を消す。', w: ['trim'], a: ['空白', 'strip', '余白'] },
   { l: 'null安全 (?. ?:)', t: 'val ${1:name}: String? = null\nprintln(${1} ?: "${2:ゲスト}")', m: '型に ? をつけると null を入れられる。?. は null でも落ちずに呼ぶ、?: は null のときの代わりの値。', w: ['null'], a: ['null', 'ヌル', 'none', '値がない', 'null安全', '安全', 'nullable'] },
   { l: '&& / || / !', t: '${1:age >= 18} && ${2:hasTicket}', m: '&&=かつ、||=または、!=ではない。', a: ['かつ', 'または', 'ではない', '論理', 'and', 'or', 'not'] },
+  { l: 'open class (継承)', t: 'open class ${1:Animal}(val name: String)\nclass ${2:Dog}(name: String) : ${1}(name)', m: '引きつがれるクラスには open が必要。子は class 子(…) : 親(…) と書く。上書きするメソッドは override。', top: true, w: ['open', 'override'], a: ['継承', 'inherit', 'extends', '親クラス', '子クラス', '引きつぐ'] },
+  { l: 'enum class', t: 'enum class ${1:Color} { ${2:RED, GREEN, BLUE} }', m: '決まった選択肢に名前をつける(列挙型)。ordinal は番号、values() で全部のリスト。', top: true, w: ['enum'], a: ['列挙型', '選択肢', '定数'] },
+  { l: 'setOf', t: 'val ${1:s} = setOf(${2:1, 2, 3})', m: '重複をなくした集まり(集合)を作る(読み取り専用)。追加したいなら mutableSetOf。', w: ['setOf', 'toSet', 'mutableSetOf'], a: ['集合', '重複', '重複をなくす', 'ユニーク', 'セット'] },
+  { l: '.reversed', t: '${1:s}.reversed()', m: '逆さにした文字列(やリスト)を返す。', w: ['reversed'], a: ['逆さ', 'reverse', '反転', '回文', '後ろから'] },
+  { l: '.count { }', t: '${1:s}.count { it == ${2:\'a\'} }', m: '条件に合う要素(文字)が何個あるか数える。', w: ['count'], a: ['数える', 'カウント', '出現回数', '何回'] },
+  { l: '2次元リスト', t: 'val ${1:grid} = listOf(listOf(${2:1, 2, 3}), listOf(${3:4, 5, 6}))\nprintln(${1}[1][2])', m: 'listOf の中に listOf を入れた表。grid[行][列] で取り出す。', a: ['2次元配列', '二次元', '表', 'マス目', 'グリッド', '行列'] },
+  { l: 'sqrt / pow', t: 'sqrt(${1:16.0})', m: '平方根(sqrt)・累乗(2.0.pow(10))・abs・floor・ceil。import kotlin.math.* が必要。', w: ['sqrt', 'pow', 'abs', 'floor', 'ceil'], a: ['平方根', 'ルート', '累乗', '切り捨て', '切り上げ', '数学'] },
 ];

@@ -26,5 +26,16 @@
  "switch": true,
  "slice": true,
  "join": true,
- "mapfilter": true
+ "mapfilter": true,
+ "inherit": true,
+ "enum": true,
+ "grid": true,
+ "set": true,
+ "lambda": false,
+ "rounding": true,
+ "strcompare": true,
+ "ternary": true,
+ "stats": true,
+ "reverse": true,
+ "count": true
 }
